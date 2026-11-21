@@ -110,11 +110,37 @@
       return buffer;
     }
 
+    /** The page tries this without a gesture first; browsers may refuse. */
+    async autoStart() {
+      if (this.enabled) return true;
+      try {
+        if (!this.ctx) this.build();
+        if (this.ctx.state !== 'running') {
+          let resumeTimer = null;
+          const resumed = await Promise.race([
+            this.ctx.resume().then(() => true).catch(() => false),
+            new Promise((resolve) => {
+              resumeTimer = window.setTimeout(() => resolve(false), 850);
+            })
+          ]);
+          if (resumeTimer) clearTimeout(resumeTimer);
+          if (!resumed || this.ctx.state !== 'running') return false;
+        }
+        return await this.enable();
+      } catch (_) {
+        return false;
+      }
+    }
+
     async enable() {
       try {
         if (!this.ctx) this.build();
         const ctx = this.ctx;
         if (ctx.state === 'suspended') await ctx.resume();
+        if (ctx.state !== 'running') {
+          this.enabled = false;
+          return false;
+        }
         clearTimeout(this.suspendTimer);
         this.suspendTimer = null;
 

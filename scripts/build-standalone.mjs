@@ -14,9 +14,10 @@ let html = await read('index.html');
 let css = await read('styles.css');
 const audio = await read('audio.js');
 const scene = await read('scene.js');
+const intro = await read('intro.js');
 const main = await read('main.js');
 
-for (const [label, source] of [['audio', audio], ['scene', scene], ['main', main]]) {
+for (const [label, source] of [['audio', audio], ['scene', scene], ['intro', intro], ['main', main]]) {
   if (source.includes('</script')) throw new Error(`${label}.js contains a closing script tag`);
 }
 if (css.includes('</style')) throw new Error('styles.css contains a closing style tag');
@@ -51,13 +52,13 @@ html = html.replace(
   () => `  <!-- Standalone edition: type, paint and sound are all embedded below. -->\n  <style>\n${css}\n  </style>`
 );
 
-const scriptTags = '  <script src="audio.js"></script>\n  <script src="scene.js"></script>\n  <script src="main.js"></script>';
+const scriptTags = '  <script src="audio.js"></script>\n  <script src="scene.js"></script>\n  <script src="intro.js"></script>\n  <script src="main.js"></script>';
 if (!html.includes(scriptTags)) throw new Error('Could not find script tags to inline');
 // Use a replacer function: a string replacement would interpret `$$` in the
 // source as a literal `$` and silently corrupt JavaScript code.
 html = html.replace(
   scriptTags,
-  () => `  <script>\n${audio}\n${scene}\n${main}\n  </script>`
+  () => `  <script>\n${audio}\n${scene}\n${intro}\n${main}\n  </script>`
 );
 
 const licenseBlock = `  <div hidden id="font-licenses" aria-hidden="true">\n` +

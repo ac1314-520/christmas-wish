@@ -110,6 +110,7 @@
       this.hoveredMoon = false;
       this.ready = false;
       this.visible = true;
+      this.renderEnabled = true;
       this.quality = 1;
       this.frameCount = 0;
       this.slowFrames = 0;
@@ -1346,6 +1347,11 @@
        Public effects
        ===================================================== */
 
+    setRenderEnabled(enabled) {
+      this.renderEnabled = Boolean(enabled);
+      if (this.renderEnabled) this.lastTime = performance.now();
+    }
+
     setSnowEnabled(enabled) {
       this.snowEnabled = enabled;
     }
@@ -1649,7 +1655,7 @@
       } else {
         this.step(max(0.001, rawDt));
       }
-      this.render();
+      if (this.renderEnabled) this.render();
       this.frameCount++;
       if (this.frameCount === 60) {
         this.slowFrames = 0;

@@ -167,7 +167,7 @@ svg { display: block; }
   opacity: 0;
   touch-action: none;
   cursor: grab;
-  transition: opacity 1.6s var(--ease-soft);
+  transition: opacity 1.15s var(--ease-soft);
   outline: none;
 }
 
@@ -224,6 +224,12 @@ svg { display: block; }
   animation: none;
 }
 
+.curtain.is-hidden .curtain__content {
+  opacity: 0;
+  transform: translateY(-3vh) translateY(-10px);
+  transition: opacity 0.28s var(--ease-soft), transform 0.28s var(--ease-soft);
+}
+
 @keyframes curtainAutoHide {
   to { opacity: 0; visibility: hidden; pointer-events: none; }
 }
@@ -277,6 +283,299 @@ svg { display: block; }
   0% { transform: translateX(-120%); }
   100% { transform: translateX(330%); }
 }
+
+/* ---------- Opening film ---------- */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  overflow: hidden;
+  background: #02070d;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 1.05s var(--ease-soft), visibility 0s linear 1.05s;
+}
+
+.intro[hidden] { display: none; }
+
+.intro.is-leaving {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.intro.is-skipped {
+  transition: opacity 0.42s var(--ease-soft), visibility 0s linear 0.42s;
+}
+
+.intro.is-leaving .intro__brand,
+.intro.is-leaving .intro__status,
+.intro.is-leaving .intro__sound,
+.intro.is-leaving .intro__skip {
+  opacity: 0;
+  transition: opacity 0.3s var(--ease-soft);
+}
+
+#intro-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.intro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 100% 72% at 50% 62%, transparent 38%, rgba(0, 4, 8, 0.18) 75%, rgba(0, 3, 6, 0.52) 100%),
+    linear-gradient(to bottom, rgba(1, 5, 9, 0.16), transparent 22%, transparent 74%, rgba(1, 5, 9, 0.4));
+}
+
+.intro::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    circle at var(--flash-x, 52%) var(--flash-y, 18%),
+    rgba(255, 249, 227, 0.96) 0%,
+    rgba(255, 232, 169, 0.5) 9%,
+    rgba(190, 238, 223, 0.14) 26%,
+    transparent 58%
+  );
+  mix-blend-mode: screen;
+}
+
+.intro.is-flashing::after {
+  animation: introFlash 1.15s var(--ease-soft) both;
+}
+
+@keyframes introFlash {
+  0% { opacity: 0; }
+  18% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+.intro__brand {
+  position: absolute;
+  top: calc(var(--safe-top) + clamp(28px, 5.4vh, 55px));
+  left: 50%;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.intro__star {
+  width: 25px;
+  height: 25px;
+  margin-bottom: 12px;
+  color: var(--gold);
+  filter: drop-shadow(0 0 15px rgba(238, 210, 151, 0.46));
+  animation: introStar 4.2s var(--ease-soft) infinite;
+}
+
+.intro__name {
+  font-family: var(--font-en);
+  font-size: clamp(23px, 3vw, 29px);
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: 0.38em;
+  color: var(--ink-bright);
+  transform: translateX(0.19em);
+}
+
+.intro__sub {
+  margin-top: 8px;
+  font-family: var(--font-sans);
+  font-size: 7px;
+  letter-spacing: 0.36em;
+  color: rgba(236, 222, 194, 0.48);
+  transform: translateX(0.18em);
+}
+
+.intro__track {
+  position: relative;
+  display: block;
+  width: 112px;
+  height: 1px;
+  margin-top: 19px;
+  overflow: hidden;
+  background: rgba(238, 217, 171, 0.1);
+}
+
+.intro__track i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(238, 211, 154, 0.1), var(--gold), rgba(214, 247, 235, 0.55));
+}
+
+.intro.is-playing .intro__track i {
+  animation: introTrack 2.78s var(--ease-soft) 0.12s forwards;
+}
+
+@keyframes introTrack {
+  0% { transform: scaleX(0); }
+  70% { transform: scaleX(0.84); }
+  100% { transform: scaleX(1); }
+}
+
+@keyframes introStar {
+  0%, 100% { transform: rotate(0deg) scale(0.82); opacity: 0.7; }
+  50% { transform: rotate(90deg) scale(1.04); opacity: 1; }
+}
+
+.intro__status {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + 81px);
+  z-index: 4;
+  margin: 0;
+  transform: translateX(-50%);
+  font-family: var(--font-cn);
+  font-size: 10px;
+  line-height: 1.8;
+  letter-spacing: 0.24em;
+  white-space: nowrap;
+  color: rgba(224, 238, 232, 0.44);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
+  transition: opacity 0.6s var(--ease-soft);
+}
+
+.intro__status.is-quiet { opacity: 0; }
+
+.intro__sound {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + 28px);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 17px;
+  border: 1px solid rgba(238, 215, 164, 0.27);
+  border-radius: 999px;
+  background: rgba(5, 17, 23, 0.62);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  color: rgba(252, 241, 216, 0.82);
+  font-family: var(--font-cn);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  transition: opacity 0.55s var(--ease-soft), transform 0.55s var(--ease-out-expo), border-color 0.3s, background 0.3s;
+}
+
+.intro__sound[hidden] { display: none; }
+
+.intro__sound.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  animation: introSoundBreathe 3.2s var(--ease-soft) infinite;
+}
+
+.intro__sound:hover {
+  border-color: rgba(248, 226, 177, 0.54);
+  background: rgba(18, 33, 35, 0.8);
+}
+
+.intro__sound:focus-visible,
+.intro__skip:focus-visible {
+  outline: 1px solid rgba(255, 239, 194, 0.9);
+  outline-offset: 4px;
+}
+
+@keyframes introSoundBreathe {
+  0%, 100% { box-shadow: 0 0 0 rgba(234, 207, 151, 0); }
+  50% { box-shadow: 0 0 26px rgba(234, 207, 151, 0.08); }
+}
+
+.intro__sound-icon {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  color: var(--gold);
+}
+
+.intro__sound-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.intro__sound-bars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 9px;
+}
+
+.intro__sound-bars i {
+  width: 1px;
+  height: 100%;
+  background: rgba(239, 213, 158, 0.78);
+  transform-origin: center;
+  animation: introBar 1.2s var(--ease-soft) infinite alternate;
+}
+
+.intro__sound-bars i:nth-child(2) { height: 55%; animation-delay: -0.2s; }
+.intro__sound-bars i:nth-child(3) { height: 80%; animation-delay: -0.45s; }
+.intro__sound-bars i:nth-child(4) { height: 42%; animation-delay: -0.6s; }
+
+@keyframes introBar {
+  from { transform: scaleY(0.35); opacity: 0.45; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+.intro__skip {
+  position: absolute;
+  top: calc(var(--safe-top) + clamp(25px, 4.5vh, 43px));
+  right: var(--gutter);
+  z-index: 5;
+  padding: 6px 2px;
+  border: 0;
+  background: none;
+  color: rgba(222, 235, 229, 0.34);
+  font-family: var(--font-sans);
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.intro__skip span {
+  display: inline-block;
+  margin-left: 3px;
+  transition: transform 0.3s var(--ease-out-expo);
+}
+
+.intro__skip:hover {
+  color: rgba(249, 235, 203, 0.82);
+}
+
+.intro__skip:hover span { transform: translateX(3px); }
 
 /* ---------- Top bar ---------- */
 .topbar {
@@ -1904,6 +2203,37 @@ svg { display: block; }
   .finale-signature { margin: 20px 0 19px; font-size: 10.5px; }
 
   .curtain__content p { font-size: 10px; }
+
+  .intro__brand {
+    top: calc(var(--safe-top) + 28px);
+  }
+  .intro__star { width: 22px; height: 22px; margin-bottom: 9px; }
+  .intro__name { font-size: 23px; letter-spacing: 0.32em; }
+  .intro__sub { margin-top: 6px; font-size: 6.5px; letter-spacing: 0.3em; }
+  .intro__track { width: 92px; margin-top: 14px; }
+
+  .intro__skip {
+    top: calc(var(--safe-top) + 24px);
+    right: 16px;
+    font-size: 8px;
+  }
+
+  .intro__status {
+    bottom: calc(var(--safe-bottom) + 74px);
+    font-size: 9px;
+    letter-spacing: 0.17em;
+  }
+
+  .intro__sound {
+    bottom: calc(var(--safe-bottom) + 20px);
+    min-height: 40px;
+    padding: 0 14px;
+    gap: 7px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .intro__sound-bars { display: none; }
 }
 
 @media (max-width: 760px) and (max-height: 720px) {
@@ -2101,6 +2431,8 @@ svg { display: block; }
 
   .interaction-hint { transform: translateX(-50%); }
   .curtain { display: none; }
+  .intro__star,
+  .intro__sound-bars i { animation: none !important; }
 }
 
 /* Disable fancy hover motion on touch screens */
@@ -2201,7 +2533,24 @@ svg { display: block; }
   <div class="scene-fx scene-fx--vignette" aria-hidden="true"></div>
   <div class="scene-fx scene-fx--grain" aria-hidden="true"></div>
 
-  <header class="topbar">
+  <section class="intro" id="intro" role="region" aria-label="圣诞树开场动画" hidden>
+    <canvas id="intro-scene" aria-hidden="true"></canvas>
+    <div class="intro__brand">
+      <svg class="intro__star" viewBox="0 0 32 32" aria-hidden="true"><use href="#icon-star4"></use></svg>
+      <span class="intro__name">NOËL</span>
+      <span class="intro__sub">A NIGHT OF WISHES</span>
+      <span class="intro__track" aria-hidden="true"><i></i></span>
+    </div>
+    <p class="intro__status" id="intro-status">正在把星光挂上树梢</p>
+    <button class="intro__sound" id="intro-sound" type="button" hidden>
+      <span class="intro__sound-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><use href="#icon-sound"></use></svg></span>
+      <span class="intro__sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      轻触开启今夜的旋律
+    </button>
+    <button class="intro__skip" id="intro-skip" type="button">跳过开场 <span aria-hidden="true">→</span></button>
+  </section>
+
+  <header class="topbar" inert>
     <div class="brand" aria-label="Noël 星愿之夜">
       <span class="brand__mark" aria-hidden="true">
         <svg viewBox="0 0 32 32"><use href="#icon-star4"></use></svg>
@@ -2249,7 +2598,7 @@ svg { display: block; }
       </div>
     </section>
 
-    <div class="tree-ui" id="tree-ui">
+    <div class="tree-ui" id="tree-ui" inert>
       <button class="topper-hit" id="topper" type="button" aria-label="点亮树顶星星，许一个愿望">
         <span class="topper-hit__ring" aria-hidden="true"></span>
         <span class="topper-hit__label">许一个愿</span>
@@ -2676,11 +3025,37 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       return buffer;
     }
 
+    /** The page tries this without a gesture first; browsers may refuse. */
+    async autoStart() {
+      if (this.enabled) return true;
+      try {
+        if (!this.ctx) this.build();
+        if (this.ctx.state !== 'running') {
+          let resumeTimer = null;
+          const resumed = await Promise.race([
+            this.ctx.resume().then(() => true).catch(() => false),
+            new Promise((resolve) => {
+              resumeTimer = window.setTimeout(() => resolve(false), 850);
+            })
+          ]);
+          if (resumeTimer) clearTimeout(resumeTimer);
+          if (!resumed || this.ctx.state !== 'running') return false;
+        }
+        return await this.enable();
+      } catch (_) {
+        return false;
+      }
+    }
+
     async enable() {
       try {
         if (!this.ctx) this.build();
         const ctx = this.ctx;
         if (ctx.state === 'suspended') await ctx.resume();
+        if (ctx.state !== 'running') {
+          this.enabled = false;
+          return false;
+        }
         clearTimeout(this.suspendTimer);
         this.suspendTimer = null;
 
@@ -3050,6 +3425,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       this.hoveredMoon = false;
       this.ready = false;
       this.visible = true;
+      this.renderEnabled = true;
       this.quality = 1;
       this.frameCount = 0;
       this.slowFrames = 0;
@@ -4286,6 +4662,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
        Public effects
        ===================================================== */
 
+    setRenderEnabled(enabled) {
+      this.renderEnabled = Boolean(enabled);
+      if (this.renderEnabled) this.lastTime = performance.now();
+    }
+
     setSnowEnabled(enabled) {
       this.snowEnabled = enabled;
     }
@@ -4589,7 +4970,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       } else {
         this.step(max(0.001, rawDt));
       }
-      this.render();
+      if (this.renderEnabled) this.render();
       this.frameCount++;
       if (this.frameCount === 60) {
         this.slowFrames = 0;
@@ -5967,6 +6348,701 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 })();
 
 /* =========================================================
+   星愿圣诞夜 · Opening film
+   A little galaxy of golden-green dust spirals into a tree,
+   then hands the night over to the living scene beneath it.
+   ========================================================= */
+(function () {
+  'use strict';
+
+  const TAU = Math.PI * 2;
+  const {
+    min, max, abs, sin, cos, PI, floor, round
+  } = Math;
+  const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smoothstep = (a, b, v) => {
+    const t = clamp((v - a) / (b - a), 0, 1);
+    return t * t * (3 - 2 * t);
+  };
+  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+  const rgba = (rgb, a) => `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${a})`;
+
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0;
+      a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  const PALETTES = {
+    green: [82, 226, 175],
+    mint: [140, 255, 218],
+    gold: [255, 211, 137],
+    warm: [255, 237, 195],
+    ice: [171, 223, 255],
+    rose: [255, 171, 171]
+  };
+
+  class ChristmasIntro {
+    constructor(canvas, options = {}) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+      this.getLayout = typeof options.getLayout === 'function' ? options.getLayout : () => null;
+      this.ornaments = options.ornaments || [];
+      this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      this.sprites = this.makeSprites();
+      this.W = 1;
+      this.H = 1;
+      this.dpr = 1;
+      this.active = false;
+      this.startAt = 0;
+      this.time = 0;
+      this.raf = null;
+      this.layout = null;
+      this.stars = [];
+      this.snow = [];
+      this.particles = [];
+      this.particleBuckets = { green: [], mint: [], gold: [], warm: [], ice: [], rose: [] };
+      this.resize();
+      this.onResize = () => {
+        if (!this.active) return;
+        clearTimeout(this.resizeTimer);
+        this.resizeTimer = window.setTimeout(() => this.resize(), 120);
+      };
+      window.addEventListener('resize', this.onResize, { passive: true });
+    }
+
+    makeSprites() {
+      const make = (rgb) => {
+        const c = document.createElement('canvas');
+        c.width = 64;
+        c.height = 64;
+        const x = c.getContext('2d');
+        const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+        g.addColorStop(0, 'rgba(255, 255, 250, 0.96)');
+        g.addColorStop(0.08, 'rgba(255, 251, 231, 0.9)');
+        g.addColorStop(0.23, rgba(rgb, 0.54));
+        g.addColorStop(0.55, rgba(rgb, 0.12));
+        g.addColorStop(1, rgba(rgb, 0));
+        x.fillStyle = g;
+        x.fillRect(0, 0, 64, 64);
+        return c;
+      };
+      return {
+        green: make(PALETTES.green),
+        mint: make(PALETTES.mint),
+        gold: make(PALETTES.gold),
+        warm: make(PALETTES.warm),
+        ice: make(PALETTES.ice),
+        rose: make(PALETTES.rose)
+      };
+    }
+
+    resize() {
+      const vw = max(1, window.innerWidth);
+      const vh = max(1, window.innerHeight);
+      this.W = vw;
+      this.H = vh;
+      this.dpr = min(window.devicePixelRatio || 1, 2);
+      this.canvas.width = round(vw * this.dpr);
+      this.canvas.height = round(vh * this.dpr);
+      this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      this.ctx.imageSmoothingEnabled = true;
+      const layout = this.getLayout();
+      this.layout = layout && layout.treeHeight
+        ? layout
+        : {
+            W: vw,
+            H: vh,
+            centerX: vw * 0.58,
+            baseY: vh * 0.83,
+            treeHeight: min(vh * 0.54, vw * 0.5),
+            baseRadius: min(vh * 0.2, vw * 0.22),
+            starY: vh * 0.25,
+            horizon: vh * 0.7,
+            moon: { x: vw * 0.82, y: vh * 0.18, r: 48 }
+          };
+      this.build();
+    }
+
+    build() {
+      const layout = this.layout;
+      const W = this.W;
+      const H = this.H;
+      const mobile = W <= 760;
+      const rng = mulberry32(20261225);
+      this.centerX = layout.centerX;
+      this.baseY = layout.baseY;
+      this.treeHeight = layout.treeHeight;
+      this.treeRadius = layout.baseRadius;
+      this.topY = layout.baseY - layout.treeHeight;
+      this.starY = layout.starY || this.topY - layout.treeHeight * 0.032;
+      this.horizon = layout.horizon || H * 0.705;
+      this.moon = layout.moon || { x: W * 0.82, y: H * 0.18, r: 48 };
+
+      this.stars = [];
+      const starCount = mobile ? 54 : 96;
+      for (let i = 0; i < starCount; i++) {
+        this.stars.push({
+          x: rng() * W,
+          y: rng() * (H * 0.68),
+          size: 0.35 + rng() * 1.3,
+          alpha: 0.12 + rng() * 0.48,
+          phase: rng() * TAU,
+          speed: 0.3 + rng() * 1.1,
+          flare: rng() < 0.08
+        });
+      }
+
+      this.snow = [];
+      const snowCount = this.reduced ? 10 : (mobile ? 28 : 52);
+      for (let i = 0; i < snowCount; i++) {
+        this.snow.push({
+          x: rng(),
+          y: rng(),
+          speed: 0.018 + rng() * 0.04,
+          size: 0.8 + rng() * 2.4,
+          phase: rng() * TAU,
+          alpha: 0.18 + rng() * 0.48
+        });
+      }
+
+      this.particles = [];
+      const total = this.reduced ? 260 : (mobile ? 500 : 840);
+      const tiers = mobile ? 16 : 22;
+      const tierWeights = [];
+      const tierInfo = [];
+      for (let tier = 0; tier < tiers; tier++) {
+        const f = tier / (tiers - 1);
+        const height = Math.pow(f, 0.93);
+        const weight = Math.pow(1 - height, 0.9) + 0.08;
+        tierWeights.push(weight);
+        tierInfo.push({
+          height,
+          radius: Math.pow(1 - height, 1.02),
+          phase: rng() * TAU,
+          weight
+        });
+      }
+      const weightSum = tierWeights.reduce((a, b) => a + b, 0);
+      const allocation = tierInfo.map((tier) => floor(total * tier.weight / weightSum));
+      let allocated = allocation.reduce((a, b) => a + b, 0);
+      while (allocated < total) {
+        allocation[floor(rng() * tiers)] += 1;
+        allocated += 1;
+      }
+
+      for (let tier = 0; tier < tiers; tier++) {
+        const info = tierInfo[tier];
+        const armCount = max(4, round(lerp(9, 3, info.height)));
+        const count = allocation[tier];
+        for (let i = 0; i < count; i++) {
+          const arm = floor(rng() * armCount);
+          const p = 0.12 + 0.9 * Math.pow(rng(), 0.7);
+          const angle = info.phase + arm / armCount * TAU + (rng() - 0.5) * 0.22;
+          const z = sin(angle);
+          const r = this.treeRadius * info.radius * (0.42 + p * 0.58);
+          const x = this.centerX + cos(angle) * r * (1 + z * 0.11);
+          const y = this.baseY - info.height * this.treeHeight - (1 - p) * this.treeHeight * 0.035 + z * this.treeHeight * 0.008;
+          const light = rng() < 0.145;
+          const colorRoll = rng();
+          let color;
+          if (light) color = colorRoll > 0.72 ? 'ice' : colorRoll > 0.33 ? 'gold' : 'warm';
+          else color = colorRoll > 0.72 ? 'mint' : colorRoll > 0.2 ? 'green' : 'gold';
+          const heightNorm = info.height;
+          this.particles.push(this.makeParticle({
+            x, y, z,
+            color,
+            size: light ? 1.65 + rng() * 1.55 : 0.55 + rng() * 0.8,
+            big: light,
+            heightNorm,
+            rng
+          }));
+        }
+      }
+
+      // A garland of brighter stars wraps the same silhouette as the living tree.
+      const garlandCount = mobile ? 64 : 96;
+      for (let i = 0; i < garlandCount; i++) {
+        const t = 0.055 + 0.89 * i / garlandCount;
+        const height = Math.pow(t, 0.94);
+        const angle = t * TAU * 4.6 + 1.2;
+        const rr = this.treeRadius * Math.pow(1 - height, 1.01) * 0.96;
+        const z = sin(angle);
+        const x = this.centerX + cos(angle) * rr * (1 + z * 0.11);
+        const y = this.baseY - height * this.treeHeight + z * this.treeHeight * 0.008;
+        this.particles.push(this.makeParticle({
+          x, y, z,
+          color: i % 9 === 0 ? 'ice' : 'gold',
+          size: 1.45 + rng() * 1.15,
+          big: true,
+          heightNorm: height,
+          rng
+        }));
+      }
+
+      // Echo the eight coloured ornaments of the final tree.
+      if (this.ornaments.length) {
+        this.ornaments.forEach((ornament, i) => {
+          const height = clamp(ornament.y || 0.3 + i * 0.07, 0.14, 0.86);
+          const angle = PI / 2 + (ornament.angle || 0);
+          const rr = this.treeRadius * Math.pow(1 - height, 1.03) * 1.01;
+          const x = this.centerX + cos(angle) * rr;
+          const y = this.baseY - height * this.treeHeight;
+          const rgb = this.hexToRgb(ornament.color || '#f0d398');
+          const key = this.closestPalette(rgb);
+          this.particles.push(this.makeParticle({
+            x, y, z: sin(angle), color: key, size: 2.4,
+            big: true, heightNorm: height, rng, ornament: i
+          }));
+        });
+      }
+
+    }
+
+    makeParticle({ x, y, z, color, size, big, heightNorm, rng, ornament = -1 }) {
+      const startAngle = rng() * TAU;
+      const spread = this.treeRadius * (1.65 + rng() * 2.7) + min(this.W, this.H) * 0.025;
+      const startX = this.centerX + cos(startAngle) * spread;
+      const startY = this.baseY - this.treeHeight * (0.24 + rng() * 0.92) + sin(startAngle) * spread * 0.17;
+      const delay = 0.08 + 0.34 * heightNorm + rng() * 0.95;
+      // The tree grows from the base upward, with a soft overlap so it feels
+      // alive rather than mechanical.
+      return {
+        x, y, z, color, size, big, ornament,
+        startX,
+        startY,
+        startAngle,
+        delay,
+        duration: 0.72 + rng() * 0.52,
+        phase: rng() * TAU,
+        twinkle: 0.8 + rng() * 1.8,
+        alpha: 0.42 + rng() * 0.5
+      };
+    }
+
+    closestPalette(rgb) {
+      const entries = Object.entries(PALETTES);
+      let best = 'gold';
+      let bestDist = Infinity;
+      for (const [name, c] of entries) {
+        const d = Math.pow(c[0] - rgb[0], 2) + Math.pow(c[1] - rgb[1], 2) + Math.pow(c[2] - rgb[2], 2);
+        if (d < bestDist) {
+          bestDist = d;
+          best = name;
+        }
+      }
+      return best;
+    }
+
+    hexToRgb(hex) {
+      const h = hex.replace('#', '');
+      const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+      return [
+        parseInt(full.slice(0, 2), 16),
+        parseInt(full.slice(2, 4), 16),
+        parseInt(full.slice(4, 6), 16)
+      ];
+    }
+
+    start() {
+      if (this.active) return;
+      this.active = true;
+      this.resize();
+      this.startedAt = performance.now() / 1000;
+      this.time = 0;
+      this.last = performance.now();
+      this.raf = requestAnimationFrame((now) => this.loop(now));
+    }
+
+    stop() {
+      this.active = false;
+      if (this.raf) cancelAnimationFrame(this.raf);
+      this.raf = null;
+    }
+
+    loop(now) {
+      if (!this.active) return;
+      this.time = max(0, now / 1000 - this.startedAt);
+      const dt = clamp((now - this.last) / 1000, 0.001, 0.06);
+      this.last = now;
+      this.update(dt);
+      this.draw();
+      this.raf = requestAnimationFrame((next) => this.loop(next));
+    }
+
+    update(dt) {
+      for (const flake of this.snow) {
+        flake.y += flake.speed * dt;
+        flake.x += (0.003 + sin(this.time * 0.5 + flake.phase) * 0.006) * dt;
+        if (flake.y > 1.05) {
+          flake.y = -0.06;
+          flake.x = Math.random();
+        }
+      }
+    }
+
+    /** Where a particle lives at a given local progress. */
+    particlePosition(p, e) {
+      const remain = 1 - e;
+      const swirl = remain * 1.55;
+      const ox = (p.startX - p.x) * remain;
+      const oy = (p.startY - p.y) * remain;
+      const cs = cos(swirl);
+      const sn = sin(swirl);
+      return {
+        x: p.x + ox * cs - oy * sn,
+        y: p.y + ox * sn + oy * cs + sin(e * PI) * 16
+      };
+    }
+
+    draw() {
+      const ctx = this.ctx;
+      const W = this.W;
+      const H = this.H;
+      const t = this.time;
+      ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#01040a');
+      sky.addColorStop(0.25, '#05131d');
+      sky.addColorStop(0.52, '#0a2630');
+      sky.addColorStop(0.7, '#0d2d35');
+      sky.addColorStop(1, '#041015');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, H);
+
+      this.drawAurora();
+      this.drawStars(t);
+      this.drawMoon();
+      this.drawLand();
+
+      const reveal = smoothstep(0.1, 0.65, t);
+      this.drawTreeAura(reveal, t);
+      this.drawParticles(t, reveal);
+      this.drawSnow(t);
+      this.drawStar(t);
+      this.drawVignette();
+    }
+
+    drawAurora() {
+      const ctx = this.ctx;
+      const W = this.W;
+      const H = this.H;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const glow = ctx.createRadialGradient(W * 0.46, H * 0.25, 0, W * 0.46, H * 0.25, W * 0.52);
+      glow.addColorStop(0, 'rgba(46, 151, 140, 0.12)');
+      glow.addColorStop(0.42, 'rgba(24, 92, 96, 0.07)');
+      glow.addColorStop(1, 'rgba(6, 24, 32, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H * 0.8);
+
+      const ribbon = ctx.createLinearGradient(W * 0.15, H * 0.12, W * 0.65, H * 0.42);
+      ribbon.addColorStop(0, 'rgba(107, 238, 204, 0)');
+      ribbon.addColorStop(0.38, 'rgba(78, 219, 190, 0.055)');
+      ribbon.addColorStop(0.68, 'rgba(96, 156, 255, 0.035)');
+      ribbon.addColorStop(1, 'rgba(140, 112, 255, 0)');
+      ctx.fillStyle = ribbon;
+      ctx.beginPath();
+      ctx.moveTo(-W * 0.06, H * 0.08);
+      ctx.bezierCurveTo(W * 0.23, H * 0.17, W * 0.38, H * 0.12, W * 0.62, H * 0.26);
+      ctx.bezierCurveTo(W * 0.74, H * 0.33, W * 0.82, H * 0.28, W * 1.06, H * 0.13);
+      ctx.lineTo(W * 1.06, H * 0.4);
+      ctx.bezierCurveTo(W * 0.7, H * 0.46, W * 0.44, H * 0.33, W * 0.2, H * 0.24);
+      ctx.bezierCurveTo(W * 0.04, H * 0.17, -W * 0.02, H * 0.2, -W * 0.06, H * 0.22);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    drawStars(t) {
+      const ctx = this.ctx;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (const star of this.stars) {
+        const twinkle = 0.4 + 0.6 * (0.5 + 0.5 * sin(t * star.speed + star.phase));
+        ctx.globalAlpha = star.alpha * twinkle;
+        ctx.fillStyle = 'rgba(229, 243, 239, 0.9)';
+        ctx.fillRect(star.x, star.y, star.size, star.size);
+        if (star.flare) {
+          ctx.globalAlpha *= 0.35;
+          ctx.strokeStyle = 'rgba(234, 246, 240, 0.7)';
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(star.x - 4, star.y);
+          ctx.lineTo(star.x + 4, star.y);
+          ctx.moveTo(star.x, star.y - 4);
+          ctx.lineTo(star.x, star.y + 4);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    drawMoon() {
+      const ctx = this.ctx;
+      const moon = this.moon;
+      const r = moon.r;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.26;
+      const halo = ctx.createRadialGradient(moon.x, moon.y, r * 0.3, moon.x, moon.y, r * 5);
+      halo.addColorStop(0, 'rgba(245, 228, 187, 0.38)');
+      halo.addColorStop(0.4, 'rgba(219, 205, 173, 0.08)');
+      halo.addColorStop(1, 'rgba(219, 205, 173, 0)');
+      ctx.fillStyle = halo;
+      ctx.fillRect(moon.x - r * 5, moon.y - r * 5, r * 10, r * 10);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 0.84;
+      ctx.fillStyle = 'rgba(226, 224, 205, 0.92)';
+      ctx.beginPath();
+      ctx.arc(moon.x, moon.y, r * 0.93, 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = 'rgba(100, 124, 126, 0.8)';
+      ctx.beginPath();
+      ctx.arc(moon.x - r * 0.22, moon.y - r * 0.1, r * 0.2, 0, TAU);
+      ctx.arc(moon.x + r * 0.18, moon.y + r * 0.2, r * 0.13, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    drawLand() {
+      const ctx = this.ctx;
+      const W = this.W;
+      const H = this.H;
+      const y = this.horizon;
+      ctx.save();
+      const ice = ctx.createLinearGradient(0, y, 0, H);
+      ice.addColorStop(0, '#0b2730');
+      ice.addColorStop(0.48, '#081b23');
+      ice.addColorStop(1, '#020c12');
+      ctx.fillStyle = ice;
+      ctx.fillRect(0, y, W, H - y);
+
+      // Distant ridges, just enough to place the tree in a landscape.
+      ctx.fillStyle = 'rgba(5, 23, 29, 0.92)';
+      ctx.beginPath();
+      ctx.moveTo(0, y + 8);
+      ctx.lineTo(W * 0.16, y - H * 0.09);
+      ctx.lineTo(W * 0.3, y - H * 0.015);
+      ctx.lineTo(W * 0.43, y - H * 0.07);
+      ctx.lineTo(W * 0.59, y + 3);
+      ctx.lineTo(W * 0.72, y - H * 0.045);
+      ctx.lineTo(W * 0.86, y + 1);
+      ctx.lineTo(W, y - H * 0.035);
+      ctx.lineTo(W, y + 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(150, 199, 197, 0.08)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      const mist = ctx.createLinearGradient(0, y - 20, 0, y + 42);
+      mist.addColorStop(0, 'rgba(81, 151, 146, 0)');
+      mist.addColorStop(0.5, 'rgba(94, 166, 158, 0.12)');
+      mist.addColorStop(1, 'rgba(17, 49, 54, 0)');
+      ctx.fillStyle = mist;
+      ctx.fillRect(0, y - 22, W, 70);
+
+      const ground = ctx.createRadialGradient(this.centerX, this.baseY, 0, this.centerX, this.baseY, this.treeRadius * 2.2);
+      ground.addColorStop(0, 'rgba(77, 131, 115, 0.12)');
+      ground.addColorStop(1, 'rgba(13, 43, 45, 0)');
+      ctx.fillStyle = ground;
+      ctx.beginPath();
+      ctx.ellipse(this.centerX, this.baseY, this.treeRadius * 2.2, this.treeHeight * 0.16, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    drawTreeAura(reveal, t) {
+      const ctx = this.ctx;
+      const progress = smoothstep(0.25, 2.0, t);
+      if (progress <= 0) return;
+      const top = this.topY + 5;
+      const base = this.baseY;
+      const left = this.centerX - this.treeRadius * 0.97;
+      const right = this.centerX + this.treeRadius * 0.97;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = progress * 0.4;
+      const g = ctx.createLinearGradient(0, top, 0, base);
+      g.addColorStop(0, 'rgba(104, 236, 191, 0.035)');
+      g.addColorStop(0.4, 'rgba(40, 156, 121, 0.22)');
+      g.addColorStop(1, 'rgba(10, 59, 51, 0.38)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(this.centerX, top);
+      ctx.bezierCurveTo(this.centerX + this.treeRadius * 0.18, top + this.treeHeight * 0.24, this.centerX + this.treeRadius * 0.7, top + this.treeHeight * 0.72, right, base - 2);
+      ctx.quadraticCurveTo(this.centerX, base + 8, left, base - 2);
+      ctx.bezierCurveTo(this.centerX - this.treeRadius * 0.7, top + this.treeHeight * 0.72, this.centerX - this.treeRadius * 0.18, top + this.treeHeight * 0.24, this.centerX, top);
+      ctx.closePath();
+      try { ctx.filter = 'blur(18px)'; } catch (_) {}
+      ctx.fill();
+      try { ctx.filter = 'none'; } catch (_) {}
+
+      ctx.globalAlpha = progress * 0.33;
+      ctx.strokeStyle = 'rgba(147, 232, 193, 0.13)';
+      ctx.lineWidth = 0.7;
+      for (let i = 0; i < 11; i++) {
+        const h = 0.12 + i * 0.074;
+        const r = this.treeRadius * Math.pow(1 - h, 1.02) * 0.9;
+        ctx.beginPath();
+        ctx.ellipse(this.centerX, this.baseY - h * this.treeHeight, r, 1.5, 0, PI * 0.06, PI * 0.94);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    drawParticles(t, reveal) {
+      const ctx = this.ctx;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (const p of this.particles) {
+        const local = clamp((t - p.delay) / p.duration, 0, 1);
+        const e = easeOutCubic(local);
+        const pos = this.particlePosition(p, e);
+        if (pos.x < -80 || pos.x > this.W + 80 || pos.y < -80 || pos.y > this.H + 80) continue;
+        const twinkle = 0.58 + 0.42 * sin(t * p.twinkle + p.phase);
+        const arrived = smoothstep(0.62, 0.97, local);
+        const alpha = reveal * p.alpha * (0.2 + e * 0.8) * (0.62 + twinkle * 0.38) + arrived * 0.08;
+        if (alpha <= 0.01) continue;
+        const ratio = p.big ? 1 : 0.8;
+        const size = p.size * (0.55 + e * 0.7) * ratio;
+        if (p.big) {
+          // A small comet tail while the star is still on its way home.
+          if (local > 0.06 && local < 0.92) {
+            const prevE = easeOutCubic(clamp(local - 0.055, 0, 1));
+            const prev = this.particlePosition(p, prevE);
+            ctx.globalAlpha = alpha * 0.24;
+            ctx.strokeStyle = rgba(PALETTES[p.color], 0.6);
+            ctx.lineWidth = 0.7;
+            ctx.beginPath();
+            ctx.moveTo(prev.x, prev.y);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+          }
+          ctx.globalAlpha = alpha * (0.35 + arrived * 0.35);
+          const glow = (p.ornament >= 0 ? 22 : 16) * (0.55 + e * 0.65);
+          ctx.drawImage(this.sprites[p.color], pos.x - glow / 2, pos.y - glow / 2, glow, glow);
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = rgba(PALETTES[p.color], 0.9);
+          ctx.fillRect(pos.x - 0.75, pos.y - 0.75, 1.5, 1.5);
+        } else {
+          ctx.globalAlpha = alpha * 0.92;
+          ctx.fillStyle = rgba(PALETTES[p.color], 0.9);
+          const s = 0.7 + e * 0.8;
+          ctx.fillRect(pos.x - s / 2, pos.y - s / 2, s, s);
+          if (local > 0.3 && p.size > 0.95) {
+            ctx.globalAlpha = alpha * 0.18;
+            ctx.drawImage(this.sprites[p.color], pos.x - 5, pos.y - 5, 10, 10);
+          }
+        }
+      }
+      ctx.restore();
+    }
+
+    drawSnow(t) {
+      const ctx = this.ctx;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (const flake of this.snow) {
+        const x = flake.x * this.W + sin(t * 0.5 + flake.phase) * 9;
+        const y = flake.y * this.H;
+        ctx.globalAlpha = flake.alpha * (0.6 + 0.4 * sin(t + flake.phase));
+        ctx.fillStyle = 'rgba(240, 251, 250, 0.9)';
+        ctx.beginPath();
+        ctx.arc(x, y, flake.size * 0.7, 0, TAU);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    drawStar(t) {
+      const ctx = this.ctx;
+      const bloom = smoothstep(0.25, 2.15, t);
+      const x = this.centerX;
+      const y = this.starY;
+      const r = (5 + bloom * (this.W < 760 ? 12 : 17)) * (0.95 + sin(t * 2.2) * 0.05);
+      const pulse = 0.65 + 0.35 * sin(t * 2.6);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.28 + bloom * 0.45;
+      const halo = r * (8 + bloom * 3);
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, halo);
+      glow.addColorStop(0, `rgba(255, 252, 236, ${0.34 + bloom * 0.28})`);
+      glow.addColorStop(0.16, `rgba(255, 231, 165, ${0.18 + bloom * 0.16})`);
+      glow.addColorStop(0.5, 'rgba(178, 232, 203, 0.05)');
+      glow.addColorStop(1, 'rgba(178, 232, 203, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(x - halo, y - halo, halo * 2, halo * 2);
+
+      ctx.globalAlpha = 0.35 + bloom * 0.45;
+      for (let i = 0; i < 4; i++) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(i * PI / 2 + 0.22);
+        const ray = ctx.createLinearGradient(0, 0, r * (3.2 + bloom * 2.1), 0);
+        ray.addColorStop(0, 'rgba(255, 249, 224, 0.6)');
+        ray.addColorStop(0.3, 'rgba(255, 229, 166, 0.12)');
+        ray.addColorStop(1, 'rgba(255, 229, 166, 0)');
+        ctx.fillStyle = ray;
+        ctx.beginPath();
+        ctx.moveTo(0, -0.7);
+        ctx.lineTo(r * (3.2 + bloom * 2.1), 0);
+        ctx.lineTo(0, 0.7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.globalAlpha = 0.75 + pulse * 0.2;
+      const starFill = ctx.createRadialGradient(x, y, 0, x, y, r);
+      starFill.addColorStop(0, 'rgba(255, 255, 250, 1)');
+      starFill.addColorStop(0.4, 'rgba(255, 240, 193, 0.95)');
+      starFill.addColorStop(1, 'rgba(220, 177, 96, 0)');
+      ctx.fillStyle = starFill;
+      ctx.beginPath();
+      for (let i = 0; i < 16; i++) {
+        const a = -PI / 2 + i * PI / 8 + t * 0.08;
+        const rr = i % 2 === 0 ? r : r * 0.28;
+        const px = x + cos(a) * rr;
+        const py = y + sin(a) * rr;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    drawVignette() {
+      const ctx = this.ctx;
+      const W = this.W;
+      const H = this.H;
+      const vignette = ctx.createRadialGradient(W * 0.54, H * 0.42, H * 0.2, W * 0.54, H * 0.42, H * 0.82);
+      vignette.addColorStop(0, 'rgba(1, 6, 10, 0)');
+      vignette.addColorStop(1, 'rgba(1, 5, 9, 0.35)');
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+  }
+
+  window.ChristmasIntro = ChristmasIntro;
+})();
+
+/* =========================================================
    星愿圣诞夜 · App / UI
    Everything that makes the night feel alive lives here:
    eight little wishes, a virtual snow globe, a postcard,
@@ -6128,6 +7204,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   const elements = {
     curtain: $('#curtain'),
     scene: $('#scene'),
+    intro: $('#intro'),
+    introCanvas: $('#intro-scene'),
+    introSound: $('#intro-sound'),
+    introSkip: $('#intro-skip'),
+    introStatus: $('#intro-status'),
+    topbar: $('.topbar'),
+    treeUI: $('#tree-ui'),
     soundToggle: $('#sound-toggle'),
     snowToggle: $('#snow-toggle'),
     postcardOpen: $('#postcard-open'),
@@ -6165,8 +7248,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
   let scene = null;
   let audio = null;
+  let intro = null;
   let soundBusy = false;
   let snowOn = true;
+  let introActive = false;
+  let introFinished = false;
+  let introTimers = [];
+  let audioStarting = false;
+  let audioAutoTried = false;
+  let audioGestureHandler = null;
   let collected = new Set();
   let wishes = [];
   let currentOrnament = -1;
@@ -6874,6 +7964,85 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     elements.soundToggle.setAttribute('aria-label', on ? '关闭声音' : '开启声音');
   }
 
+  function setIntroSoundVisible(visible) {
+    const button = elements.introSound;
+    if (!button) return;
+    if (!visible) {
+      button.classList.remove('is-visible');
+      button.hidden = true;
+      return;
+    }
+    if (!introActive || introFinished) return;
+    button.hidden = false;
+    requestAnimationFrame(() => button.classList.add('is-visible'));
+  }
+
+  function disarmAudioGesture() {
+    if (!audioGestureHandler) return;
+    document.removeEventListener('pointerdown', audioGestureHandler, true);
+    document.removeEventListener('keydown', audioGestureHandler, true);
+    audioGestureHandler = null;
+  }
+
+  function armAudioGesture() {
+    if (audioGestureHandler || (audio && audio.enabled)) return;
+    const handler = (event) => {
+      const target = event.target;
+      if (target && typeof target.closest === 'function' && target.closest('#sound-toggle')) {
+        return;
+      }
+      disarmAudioGesture();
+      if (!audio || !audio.enabled) requestAudio({ auto: false });
+    };
+    audioGestureHandler = handler;
+    document.addEventListener('pointerdown', handler, true);
+    document.addEventListener('keydown', handler, true);
+  }
+
+  async function requestAudio({ auto = false, quiet = false } = {}) {
+    if (!audio || !audio.supported) {
+      if (!auto && !quiet) showToast('这片星空暂时听不见风铃。');
+      return false;
+    }
+    if (audio.enabled) {
+      setSoundState(true);
+      setIntroSoundVisible(false);
+      return true;
+    }
+    if (audioStarting) return false;
+    audioStarting = true;
+    let ok = false;
+    try {
+      ok = auto ? await audio.autoStart() : await audio.enable();
+    } catch (_) {
+      ok = false;
+    }
+    audioStarting = false;
+    setSoundState(ok);
+    if (ok) {
+      setIntroSoundVisible(false);
+      disarmAudioGesture();
+      if (introActive && !introFinished && elements.introStatus) {
+        elements.introStatus.textContent = '音乐已开启 · 正在把星光挂上树梢';
+      }
+      if (!auto && !quiet && !introActive) {
+        showToast('风铃和一首小夜曲，已为你开启。', 3800);
+      }
+    } else if (auto) {
+      if (introActive && !introFinished) setIntroSoundVisible(true);
+    } else if (!introActive && !quiet) {
+      showToast('声音暂时没有醒来，再试一次吧。');
+    }
+    return ok;
+  }
+
+  function attemptAutoSound() {
+    if (audioAutoTried) return;
+    audioAutoTried = true;
+    if (!audio || !audio.supported) return;
+    requestAudio({ auto: true, quiet: true });
+  }
+
   async function toggleSound() {
     if (soundBusy) return;
     if (!audio || !audio.supported) {
@@ -6894,6 +8063,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     if (!ok) {
       showToast('声音暂时没有醒来，再试一次吧。');
     } else {
+      disarmAudioGesture();
+      setIntroSoundVisible(false);
       showToast('风铃和一首小夜曲，已为你开启。', 4200);
     }
   }
@@ -6914,6 +8085,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
   function setupKeyboard() {
     document.addEventListener('keydown', (event) => {
+      if (introActive && !introFinished) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          finishIntro(true);
+        }
+        return;
+      }
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target;
       const typing = target && (
@@ -6957,6 +8135,25 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     elements.soundToggle.addEventListener('click', toggleSound);
     elements.snowToggle.addEventListener('click', toggleSnow);
     elements.postcardOpen.addEventListener('click', openPostcard);
+
+    if (elements.intro) {
+      elements.intro.addEventListener('pointerdown', () => {
+        if (!audio || !audio.enabled) requestAudio({ auto: false, quiet: true });
+      }, { passive: true });
+    }
+    if (elements.introSound) {
+      elements.introSound.addEventListener('click', (event) => {
+        event.stopPropagation();
+        requestAudio({ auto: false });
+      });
+    }
+    if (elements.introSkip) {
+      elements.introSkip.addEventListener('click', (event) => {
+        event.stopPropagation();
+        requestAudio({ auto: false, quiet: true });
+        finishIntro(true);
+      });
+    }
     elements.surpriseCollect.addEventListener('click', collectCurrentOrnament);
     elements.wishForm.addEventListener('submit', submitWish);
     elements.wishInput.addEventListener('input', () => {
@@ -7012,20 +8209,109 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     scene.setSnowEnabled(snowOn);
   }
 
-  function boot() {
-    const reveal = () => {
-      document.documentElement.classList.add('is-ready');
-      if (elements.curtain) {
-        elements.curtain.classList.add('is-hidden');
-      }
-      showPromptSoon();
-    };
+  function hidePageFromAssistiveTech(hide) {
+    const nodes = [elements.topbar, $('.hero'), $('.site-footer')].filter(Boolean);
+    nodes.forEach((node) => {
+      if (hide) node.setAttribute('aria-hidden', 'true');
+      else node.removeAttribute('aria-hidden');
+    });
+  }
 
+  function revealPage() {
+    hidePageFromAssistiveTech(false);
+    if (elements.topbar) elements.topbar.removeAttribute('inert');
+    if (elements.treeUI) elements.treeUI.removeAttribute('inert');
+    document.documentElement.classList.add('is-ready');
+    if (elements.curtain) elements.curtain.classList.add('is-hidden');
+    if (scene) scene.setRenderEnabled(true);
+    showPromptSoon();
+  }
+
+  function setIntroFlashPoint() {
+    if (!elements.intro || !scene || !scene.layout) return;
+    elements.intro.style.setProperty('--flash-x', `${scene.layout.centerX}px`);
+    elements.intro.style.setProperty('--flash-y', `${scene.layout.starY}px`);
+  }
+
+  function startIntroSequence() {
+    if (!intro || reduceMotion) {
+      if (elements.intro) {
+        elements.intro.hidden = true;
+        elements.intro.inert = true;
+      }
+      revealPage();
+      attemptAutoSound();
+      if (!audio || !audio.enabled) armAudioGesture();
+      return;
+    }
+
+    introActive = true;
+    introFinished = false;
+    hidePageFromAssistiveTech(true);
+    if (elements.curtain) elements.curtain.classList.add('is-hidden');
+    if (scene) scene.setRenderEnabled(false);
+    elements.intro.hidden = false;
+    elements.intro.inert = false;
+    elements.intro.classList.add('is-playing');
+    setIntroFlashPoint();
+    try {
+      intro.start();
+    } catch (error) {
+      console.warn('[Noël] Opening film stopped early:', error);
+      finishIntro(true);
+      return;
+    }
+    attemptAutoSound();
+
+    introTimers.push(window.setTimeout(() => {
+      if (introFinished) return;
+      elements.intro.classList.add('is-flashing');
+      if (audio && audio.enabled) audio.chime('warm');
+    }, reduceMotion ? 80 : 2600));
+
+    introTimers.push(window.setTimeout(() => finishIntro(false), reduceMotion ? 250 : 3000));
+  }
+
+  function finishIntro(skipped = false) {
+    if (introFinished) return;
+    introFinished = true;
+    introTimers.forEach((timer) => clearTimeout(timer));
+    introTimers = [];
+
+    if (elements.intro) {
+      elements.intro.classList.remove('is-playing');
+      if (skipped) elements.intro.classList.add('is-skipped');
+      elements.intro.classList.add('is-leaving');
+      elements.intro.inert = true;
+      elements.intro.setAttribute('aria-hidden', 'true');
+      if (elements.intro.contains(document.activeElement)) {
+        document.activeElement.blur();
+      }
+    }
+    setIntroSoundVisible(false);
+    revealPage();
+    if (!audio || !audio.enabled) armAudioGesture();
+
+    const hideDelay = skipped || reduceMotion ? 500 : 1180;
+    window.setTimeout(() => {
+      if (!elements.intro) return;
+      elements.intro.hidden = true;
+      elements.intro.classList.remove('is-leaving', 'is-skipped', 'is-flashing');
+      if (intro) intro.stop();
+      introActive = false;
+    }, hideDelay);
+  }
+
+  function boot() {
+    const start = () => {
+      startIntroSequence();
+    };
+    const delay = reduceMotion ? 20 : 450;
     if (document.readyState === 'complete') {
-      window.setTimeout(reveal, reduceMotion ? 20 : 500);
+      window.setTimeout(start, delay);
     } else {
       window.addEventListener('load', () => {
-        window.setTimeout(reveal, reduceMotion ? 20 : 500);
+        window.setTimeout(start, delay);
       }, { once: true });
     }
   }
@@ -7040,11 +8326,26 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     updateProgress();
     if (wishes.length) renderWishHistory();
 
+    if (window.ChristmasIntro) {
+      try {
+        intro = new window.ChristmasIntro(elements.introCanvas, {
+          getLayout: () => (scene ? scene.layout : null),
+          ornaments: ORNAMENTS
+        });
+      } catch (error) {
+        console.warn('[Noël] Opening film could not start:', error);
+        intro = null;
+      }
+    }
+    hidePageFromAssistiveTech(true);
+
     // The Chinese editorial block changes height once its serif arrives. Give
-    // the scene a second measuring pass so the tree never crowds the copy.
+    // the scene a second measuring pass so the tree never crowds the copy, and
+    // let the opening film re-align its particles to the final tree.
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => {
         if (scene) scene.resize(false);
+        if (intro) intro.resize();
       }).catch(() => {});
     }
 
@@ -7052,13 +8353,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     // from the browser console to spawn a meteor, recolor the evening, or
     // inspect the scene. Everything visible on the page remains plain DOM.
     window.NOEL = {
-      version: '1.0.0',
+      version: '1.1.0',
       scene,
+      intro,
       audio,
       ornaments: ORNAMENTS,
       openWish,
       openPostcard,
-      showToast
+      showToast,
+      skipIntro: () => finishIntro(true)
     };
 
     // A small gift for anyone who lets the page sit for a while.

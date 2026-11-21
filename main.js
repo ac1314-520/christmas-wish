@@ -160,6 +160,13 @@
   const elements = {
     curtain: $('#curtain'),
     scene: $('#scene'),
+    intro: $('#intro'),
+    introCanvas: $('#intro-scene'),
+    introSound: $('#intro-sound'),
+    introSkip: $('#intro-skip'),
+    introStatus: $('#intro-status'),
+    topbar: $('.topbar'),
+    treeUI: $('#tree-ui'),
     soundToggle: $('#sound-toggle'),
     snowToggle: $('#snow-toggle'),
     postcardOpen: $('#postcard-open'),
@@ -197,8 +204,15 @@
 
   let scene = null;
   let audio = null;
+  let intro = null;
   let soundBusy = false;
   let snowOn = true;
+  let introActive = false;
+  let introFinished = false;
+  let introTimers = [];
+  let audioStarting = false;
+  let audioAutoTried = false;
+  let audioGestureHandler = null;
   let collected = new Set();
   let wishes = [];
   let currentOrnament = -1;
@@ -906,6 +920,85 @@
     elements.soundToggle.setAttribute('aria-label', on ? '关闭声音' : '开启声音');
   }
 
+  function setIntroSoundVisible(visible) {
+    const button = elements.introSound;
+    if (!button) return;
+    if (!visible) {
+      button.classList.remove('is-visible');
+      button.hidden = true;
+      return;
+    }
+    if (!introActive || introFinished) return;
+    button.hidden = false;
+    requestAnimationFrame(() => button.classList.add('is-visible'));
+  }
+
+  function disarmAudioGesture() {
+    if (!audioGestureHandler) return;
+    document.removeEventListener('pointerdown', audioGestureHandler, true);
+    document.removeEventListener('keydown', audioGestureHandler, true);
+    audioGestureHandler = null;
+  }
+
+  function armAudioGesture() {
+    if (audioGestureHandler || (audio && audio.enabled)) return;
+    const handler = (event) => {
+      const target = event.target;
+      if (target && typeof target.closest === 'function' && target.closest('#sound-toggle')) {
+        return;
+      }
+      disarmAudioGesture();
+      if (!audio || !audio.enabled) requestAudio({ auto: false });
+    };
+    audioGestureHandler = handler;
+    document.addEventListener('pointerdown', handler, true);
+    document.addEventListener('keydown', handler, true);
+  }
+
+  async function requestAudio({ auto = false, quiet = false } = {}) {
+    if (!audio || !audio.supported) {
+      if (!auto && !quiet) showToast('这片星空暂时听不见风铃。');
+      return false;
+    }
+    if (audio.enabled) {
+      setSoundState(true);
+      setIntroSoundVisible(false);
+      return true;
+    }
+    if (audioStarting) return false;
+    audioStarting = true;
+    let ok = false;
+    try {
+      ok = auto ? await audio.autoStart() : await audio.enable();
+    } catch (_) {
+      ok = false;
+    }
+    audioStarting = false;
+    setSoundState(ok);
+    if (ok) {
+      setIntroSoundVisible(false);
+      disarmAudioGesture();
+      if (introActive && !introFinished && elements.introStatus) {
+        elements.introStatus.textContent = '音乐已开启 · 正在把星光挂上树梢';
+      }
+      if (!auto && !quiet && !introActive) {
+        showToast('风铃和一首小夜曲，已为你开启。', 3800);
+      }
+    } else if (auto) {
+      if (introActive && !introFinished) setIntroSoundVisible(true);
+    } else if (!introActive && !quiet) {
+      showToast('声音暂时没有醒来，再试一次吧。');
+    }
+    return ok;
+  }
+
+  function attemptAutoSound() {
+    if (audioAutoTried) return;
+    audioAutoTried = true;
+    if (!audio || !audio.supported) return;
+    requestAudio({ auto: true, quiet: true });
+  }
+
   async function toggleSound() {
     if (soundBusy) return;
     if (!audio || !audio.supported) {
@@ -926,6 +1019,8 @@
     if (!ok) {
       showToast('声音暂时没有醒来，再试一次吧。');
     } else {
+      disarmAudioGesture();
+      setIntroSoundVisible(false);
       showToast('风铃和一首小夜曲，已为你开启。', 4200);
     }
   }
@@ -946,6 +1041,13 @@
 
   function setupKeyboard() {
     document.addEventListener('keydown', (event) => {
+      if (introActive && !introFinished) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          finishIntro(true);
+        }
+        return;
+      }
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target;
       const typing = target && (
@@ -989,6 +1091,25 @@
     elements.soundToggle.addEventListener('click', toggleSound);
     elements.snowToggle.addEventListener('click', toggleSnow);
     elements.postcardOpen.addEventListener('click', openPostcard);
+
+    if (elements.intro) {
+      elements.intro.addEventListener('pointerdown', () => {
+        if (!audio || !audio.enabled) requestAudio({ auto: false, quiet: true });
+      }, { passive: true });
+    }
+    if (elements.introSound) {
+      elements.introSound.addEventListener('click', (event) => {
+        event.stopPropagation();
+        requestAudio({ auto: false });
+      });
+    }
+    if (elements.introSkip) {
+      elements.introSkip.addEventListener('click', (event) => {
+        event.stopPropagation();
+        requestAudio({ auto: false, quiet: true });
+        finishIntro(true);
+      });
+    }
     elements.surpriseCollect.addEventListener('click', collectCurrentOrnament);
     elements.wishForm.addEventListener('submit', submitWish);
     elements.wishInput.addEventListener('input', () => {
@@ -1044,20 +1165,109 @@
     scene.setSnowEnabled(snowOn);
   }
 
-  function boot() {
-    const reveal = () => {
-      document.documentElement.classList.add('is-ready');
-      if (elements.curtain) {
-        elements.curtain.classList.add('is-hidden');
-      }
-      showPromptSoon();
-    };
+  function hidePageFromAssistiveTech(hide) {
+    const nodes = [elements.topbar, $('.hero'), $('.site-footer')].filter(Boolean);
+    nodes.forEach((node) => {
+      if (hide) node.setAttribute('aria-hidden', 'true');
+      else node.removeAttribute('aria-hidden');
+    });
+  }
 
+  function revealPage() {
+    hidePageFromAssistiveTech(false);
+    if (elements.topbar) elements.topbar.removeAttribute('inert');
+    if (elements.treeUI) elements.treeUI.removeAttribute('inert');
+    document.documentElement.classList.add('is-ready');
+    if (elements.curtain) elements.curtain.classList.add('is-hidden');
+    if (scene) scene.setRenderEnabled(true);
+    showPromptSoon();
+  }
+
+  function setIntroFlashPoint() {
+    if (!elements.intro || !scene || !scene.layout) return;
+    elements.intro.style.setProperty('--flash-x', `${scene.layout.centerX}px`);
+    elements.intro.style.setProperty('--flash-y', `${scene.layout.starY}px`);
+  }
+
+  function startIntroSequence() {
+    if (!intro || reduceMotion) {
+      if (elements.intro) {
+        elements.intro.hidden = true;
+        elements.intro.inert = true;
+      }
+      revealPage();
+      attemptAutoSound();
+      if (!audio || !audio.enabled) armAudioGesture();
+      return;
+    }
+
+    introActive = true;
+    introFinished = false;
+    hidePageFromAssistiveTech(true);
+    if (elements.curtain) elements.curtain.classList.add('is-hidden');
+    if (scene) scene.setRenderEnabled(false);
+    elements.intro.hidden = false;
+    elements.intro.inert = false;
+    elements.intro.classList.add('is-playing');
+    setIntroFlashPoint();
+    try {
+      intro.start();
+    } catch (error) {
+      console.warn('[Noël] Opening film stopped early:', error);
+      finishIntro(true);
+      return;
+    }
+    attemptAutoSound();
+
+    introTimers.push(window.setTimeout(() => {
+      if (introFinished) return;
+      elements.intro.classList.add('is-flashing');
+      if (audio && audio.enabled) audio.chime('warm');
+    }, reduceMotion ? 80 : 2600));
+
+    introTimers.push(window.setTimeout(() => finishIntro(false), reduceMotion ? 250 : 3000));
+  }
+
+  function finishIntro(skipped = false) {
+    if (introFinished) return;
+    introFinished = true;
+    introTimers.forEach((timer) => clearTimeout(timer));
+    introTimers = [];
+
+    if (elements.intro) {
+      elements.intro.classList.remove('is-playing');
+      if (skipped) elements.intro.classList.add('is-skipped');
+      elements.intro.classList.add('is-leaving');
+      elements.intro.inert = true;
+      elements.intro.setAttribute('aria-hidden', 'true');
+      if (elements.intro.contains(document.activeElement)) {
+        document.activeElement.blur();
+      }
+    }
+    setIntroSoundVisible(false);
+    revealPage();
+    if (!audio || !audio.enabled) armAudioGesture();
+
+    const hideDelay = skipped || reduceMotion ? 500 : 1180;
+    window.setTimeout(() => {
+      if (!elements.intro) return;
+      elements.intro.hidden = true;
+      elements.intro.classList.remove('is-leaving', 'is-skipped', 'is-flashing');
+      if (intro) intro.stop();
+      introActive = false;
+    }, hideDelay);
+  }
+
+  function boot() {
+    const start = () => {
+      startIntroSequence();
+    };
+    const delay = reduceMotion ? 20 : 450;
     if (document.readyState === 'complete') {
-      window.setTimeout(reveal, reduceMotion ? 20 : 500);
+      window.setTimeout(start, delay);
     } else {
       window.addEventListener('load', () => {
-        window.setTimeout(reveal, reduceMotion ? 20 : 500);
+        window.setTimeout(start, delay);
       }, { once: true });
     }
   }
@@ -1072,11 +1282,26 @@
     updateProgress();
     if (wishes.length) renderWishHistory();
 
+    if (window.ChristmasIntro) {
+      try {
+        intro = new window.ChristmasIntro(elements.introCanvas, {
+          getLayout: () => (scene ? scene.layout : null),
+          ornaments: ORNAMENTS
+        });
+      } catch (error) {
+        console.warn('[Noël] Opening film could not start:', error);
+        intro = null;
+      }
+    }
+    hidePageFromAssistiveTech(true);
+
     // The Chinese editorial block changes height once its serif arrives. Give
-    // the scene a second measuring pass so the tree never crowds the copy.
+    // the scene a second measuring pass so the tree never crowds the copy, and
+    // let the opening film re-align its particles to the final tree.
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => {
         if (scene) scene.resize(false);
+        if (intro) intro.resize();
       }).catch(() => {});
     }
 
@@ -1084,13 +1309,15 @@
     // from the browser console to spawn a meteor, recolor the evening, or
     // inspect the scene. Everything visible on the page remains plain DOM.
     window.NOEL = {
-      version: '1.0.0',
+      version: '1.1.0',
       scene,
+      intro,
       audio,
       ornaments: ORNAMENTS,
       openWish,
       openPostcard,
-      showToast
+      showToast,
+      skipIntro: () => finishIntro(true)
     };
 
     // A small gift for anyone who lets the page sit for a while.
