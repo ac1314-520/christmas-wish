@@ -80,6 +80,11 @@
       this.drag = null;
       this.lastDragEnd = 0;
       this.lightProgress = 0;
+      this.assemblyStarted = false;
+      this.assemblyElapsed = 0;
+      this.assemblyDuration = 3.1;
+      this.assemblyProgress = 0;
+      this.assemblyComplete = false;
       this.hoveredOrnament = -1;
       this.focusedOrnament = -1;
       this.snowEnabled = true;
@@ -1046,6 +1051,13 @@
           const x = cos(angle) * r;
           const z = sin(angle) * r;
 
+          // Where this needle waits in the dark before the tree begins to form.
+          const scatterAngle = rng() * TAU;
+          const scatterSpread = 1.05 + rng() * 2.5;
+          const introX = cos(scatterAngle) * scatterSpread;
+          const introY = (rng() - 0.5) * 1.45;
+          const introDelay = rng() * 0.16;
+
           // Outward, gently drooping needles.
           const extend = 0.015 + rng() * 0.043;
           const tipR = r + extend * (0.55 + rng() * 0.8);
@@ -1060,6 +1072,9 @@
             tone,
             band,
             phase: rng() * TAU,
+            introX,
+            introY,
+            introDelay,
             glint: tip && rng() < 0.09
           });
         }
@@ -1107,6 +1122,8 @@
           angle = rng() * TAU;
         }
         const r = this.radiusAt(y) * (0.92 + rng() * 0.12) + 0.045;
+        const scatterAngle = rng() * TAU;
+        const scatterSpread = 1.25 + rng() * 2.7;
         lights.push({
           x: cos(angle) * r,
           y,
@@ -1117,7 +1134,10 @@
           phase: rng() * TAU,
           speed: 0.7 + rng() * 2.1,
           size: (0.9 + rng() * 0.5) * (mobile ? 0.84 : 1),
-          appear: t
+          appear: t,
+          introX: cos(scatterAngle) * scatterSpread,
+          introY: (rng() - 0.5) * 1.35,
+          introDelay: rng() * 0.16
         });
       }
 
@@ -1350,6 +1370,22 @@
     setRenderEnabled(enabled) {
       this.renderEnabled = Boolean(enabled);
       if (this.renderEnabled) this.lastTime = performance.now();
+    }
+
+    startAssembly() {
+      this.assemblyStarted = true;
+      this.assemblyElapsed = 0;
+      this.assemblyProgress = 0;
+      this.assemblyComplete = false;
+      this.lightProgress = 1;
+    }
+
+    finishAssembly() {
+      this.assemblyStarted = true;
+      this.assemblyElapsed = this.assemblyDuration;
+      this.assemblyProgress = 1;
+      this.assemblyComplete = true;
+      this.lightProgress = 1;
     }
 
     setSnowEnabled(enabled) {
@@ -1666,8 +1702,11 @@
       this.time += dt;
       this.elapsed += dt;
 
-      const intro = clamp((this.elapsed - 0.4) / 3.5, 0, 1);
-      this.lightProgress = easeOutCubic(intro);
+      if (this.assemblyStarted && this.assemblyProgress < 1) {
+        this.assemblyElapsed += dt;
+        this.assemblyProgress = clamp(this.assemblyElapsed / this.assemblyDuration, 0, 1);
+        if (this.assemblyProgress >= 1) this.assemblyComplete = true;
+      }
 
       // Pointer parallax is always silky, never bouncy.
       this.parallax.x = lerp(this.parallax.x, this.parallax.targetX, 1 - Math.pow(0.001, dt));
@@ -2104,16 +2143,25 @@
     renderTreeLayer() {
       if (!this.tree) return;
       const ctx = this.treeCtx;
+      const assembling = this.assemblyStarted && this.assemblyProgress < 1;
+      const p = this.assemblyProgress;
       ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
       ctx.clearRect(0, 0, this.W, this.H);
-      this.drawCanopy(ctx);
+
+      const canopyReveal = assembling ? smoothstep(0.2, 0.82, p) : 1;
+      if (canopyReveal > 0.001) {
+        ctx.save();
+        ctx.globalAlpha = canopyReveal;
+        this.drawCanopy(ctx);
+        ctx.restore();
+      }
       this.drawNeedles(ctx);
       this.drawTreeDust(ctx);
       this.drawLights(ctx);
       this.drawOrnaments(ctx);
-      this.drawGifts(ctx);
+      if (!assembling || p > 0.9) this.drawGifts(ctx);
       this.drawTopper(ctx);
     }
 
@@ -2213,6 +2261,11 @@
       const s = sin(rotation);
       const introAlpha = 0.58 + this.lightProgress * 0.42;
       const needles = this.tree.needles;
+      const assembling = this.assemblyStarted && this.assemblyProgress < 1;
+      const assemblyP = this.assemblyProgress;
+      const spin = assembling ? (1 - assemblyP) * 1.55 : 0;
+      const spinCos = assembling ? cos(spin) : 1;
+      const spinSin = assembling ? sin(spin) : 0;
 
       for (let i = 0; i < needles.length; i++) {
         const n = needles[i];
@@ -2223,10 +2276,25 @@
         const zr2 = n.x2 * s + n.z2 * c;
         const p2 = 1 + zr2 * 0.13;
         const sway = this.reducedMotion ? 0 : sin(this.time * 0.62 + n.y * 2.2) * baseRadius * 0.004;
-        const sx1 = this.layout.centerX + xr1 * baseRadius * p1 + sway + this.parallax.x * 1.2;
-        const sy1 = baseY - n.y * treeHeight + zr1 * treeHeight * 0.012;
-        const sx2 = this.layout.centerX + xr2 * baseRadius * p2 + sway + this.parallax.x * 1.2;
-        const sy2 = baseY - n.y2 * treeHeight + zr2 * treeHeight * 0.012;
+        let sx1 = this.layout.centerX + xr1 * baseRadius * p1 + sway + this.parallax.x * 1.2;
+        let sy1 = baseY - n.y * treeHeight + zr1 * treeHeight * 0.012;
+        let sx2 = this.layout.centerX + xr2 * baseRadius * p2 + sway + this.parallax.x * 1.2;
+        let sy2 = baseY - n.y2 * treeHeight + zr2 * treeHeight * 0.012;
+
+        if (assembling) {
+          const delay = 0.025 + n.y * 0.47 + n.introDelay;
+          const local = smoothstep(delay, delay + 0.24, assemblyP);
+          if (local <= 0.012) continue;
+          const remain = 1 - local;
+          const ox = n.introX * baseRadius * 1.25;
+          const oy = n.introY * treeHeight * 0.8;
+          const rx = (ox * spinCos - oy * spinSin) * remain;
+          const ry = (ox * spinSin + oy * spinCos) * remain;
+          sx1 += rx;
+          sy1 += ry;
+          sx2 += rx;
+          sy2 += ry;
+        }
         let band;
         if (n.band !== undefined) band = n.band;
         else {
@@ -2262,6 +2330,10 @@
 
     drawTreeDust(ctx) {
       if (!this.tree) return;
+      const reveal = this.assemblyStarted && this.assemblyProgress < 1
+        ? smoothstep(0.34, 0.76, this.assemblyProgress)
+        : 1;
+      if (reveal <= 0.001) return;
       const dust = this.tree.dust;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
@@ -2271,7 +2343,7 @@
         if (p.z < -0.42) continue;
         const twinkle = 0.35 + 0.65 * (0.5 + 0.5 * sin(this.time * 1.8 + d.phase));
         const size = d.size * (1.4 + p.z * 0.2) * (this.isMobile ? 2.8 : 3.6) * (0.7 + twinkle * 0.7);
-        ctx.globalAlpha = (0.22 + twinkle * 0.5) * (0.6 + (p.z + 1) * 0.18);
+        ctx.globalAlpha = (0.22 + twinkle * 0.5) * (0.6 + (p.z + 1) * 0.18) * reveal;
         ctx.drawImage(this.sprites.glow[d.color], p.x - size / 2, p.y - size / 2, size, size);
       }
       ctx.restore();
@@ -2281,6 +2353,12 @@
       if (!this.tree) return;
       const { lights } = this.tree;
       const progress = this.lightProgress;
+      const { baseRadius, treeHeight } = this.layout;
+      const assembling = this.assemblyStarted && this.assemblyProgress < 1;
+      const assemblyP = this.assemblyProgress;
+      const spin = assembling ? (1 - assemblyP) * 1.55 : 0;
+      const spinCos = assembling ? cos(spin) : 1;
+      const spinSin = assembling ? sin(spin) : 0;
       const treeScale = clamp(this.layout.treeHeight / 440, 0.55, 1.05);
       const mobileScale = treeScale;
       const grandBoost = 1 + this.grand * 0.6;
@@ -2295,13 +2373,27 @@
       ctx.globalCompositeOperation = 'lighter';
       for (let i = 0; i < lights.length; i++) {
         const light = lights[i];
-        // A wave of light travels from the base of the tree to its star.
-        const appear = smoothstep(light.appear - 0.05, light.appear + 0.035, progress);
-        if (appear <= 0.001) continue;
         const p = this.project(light.x, light.y, light.z);
+        let appear;
+        let pop = 0;
+        if (assembling) {
+          const delay = 0.02 + light.y * 0.48 + light.introDelay;
+          const local = smoothstep(delay, delay + 0.23, assemblyP);
+          if (local <= 0.004) continue;
+          const remain = 1 - local;
+          const ox = light.introX * baseRadius * 1.85;
+          const oy = light.introY * treeHeight * 0.86;
+          p.x += (ox * spinCos - oy * spinSin) * remain;
+          p.y += (ox * spinSin + oy * spinCos) * remain;
+          appear = 0.28 + 0.72 * local;
+        } else {
+          // A wave of light travels from the base of the tree to its star.
+          appear = smoothstep(light.appear - 0.05, light.appear + 0.035, progress);
+          pop = smoothstep(light.appear + 0.12, light.appear, progress);
+        }
+        if (appear <= 0.001) continue;
         const twinkle = 0.42 + 0.58 * Math.pow(0.5 + 0.5 * sin(this.time * light.speed + light.phase), 1.6);
         const depthAlpha = 0.45 + (p.z + 1) * 0.28;
-        const pop = smoothstep(light.appear + 0.12, light.appear, progress);
         const baseSize = (light.big ? 39 : 25) * mobileScale * (1 + p.z * 0.08) * grandBoost;
         const size = baseSize * (0.78 + twinkle * 0.35 + pop * 0.35);
         ctx.globalAlpha = clamp((0.34 + twinkle * 0.68) * depthAlpha * appear, 0, 1);
@@ -2340,19 +2432,23 @@
       const ornaments = this.tree.ornaments;
       const mobile = this.isMobile;
       const grand = 1 + this.grand * 0.4;
+      const assembling = this.assemblyStarted && this.assemblyProgress < 1;
+      const assemblyP = this.assemblyProgress;
       this.ornamentScreen = new Array(ornaments.length);
       ctx.save();
 
-      ctx.strokeStyle = 'rgba(236, 207, 148, 0.26)';
-      ctx.lineWidth = 0.7;
-      for (let i = 0; i < ornaments.length; i++) {
-        const o = ornaments[i];
-        const anchor = this.project(o.x * 0.98, o.y + 0.035, o.z * 0.98);
-        const p = this.project(o.x, o.y, o.z);
-        ctx.beginPath();
-        ctx.moveTo(anchor.x, anchor.y);
-        ctx.lineTo(p.x, p.y - 6);
-        ctx.stroke();
+      if (!assembling || assemblyP > 0.72) {
+        ctx.strokeStyle = 'rgba(236, 207, 148, 0.26)';
+        ctx.lineWidth = 0.7;
+        for (let i = 0; i < ornaments.length; i++) {
+          const o = ornaments[i];
+          const anchor = this.project(o.x * 0.98, o.y + 0.035, o.z * 0.98);
+          const p = this.project(o.x, o.y, o.z);
+          ctx.beginPath();
+          ctx.moveTo(anchor.x, anchor.y);
+          ctx.lineTo(p.x, p.y - 6);
+          ctx.stroke();
+        }
       }
 
       // Ornaments behind the tree's central mass should still feel dimensional.
@@ -2362,8 +2458,12 @@
 
       for (const item of ordered) {
         const { o, i, p } = item;
+        const introAppear = assembling
+          ? smoothstep(0.72 + i * 0.011, 0.84 + i * 0.011, assemblyP)
+          : 1;
+        if (introAppear <= 0.01) continue;
         const accent = o.accent;
-        const baseR = clamp(this.layout.treeHeight * 0.0182, 6.6, 13.4) * (1 + p.z * 0.08) * grand;
+        const baseR = clamp(this.layout.treeHeight * 0.0182, 6.6, 13.4) * (1 + p.z * 0.08) * grand * introAppear;
         const hover = (this.hoveredOrnament === i || this.focusedOrnament === i) ? 1 : 0;
         const pulse = 0.5 + 0.5 * sin(this.time * 1.7 + i * 1.7);
         const r = baseR * (1 + hover * 0.1 + pulse * 0.025);
@@ -2549,17 +2649,21 @@
 
     drawTopper(ctx) {
       const { centerX, starY, starSize, treeHeight } = this.layout;
-      const r = starSize * (0.9 + 0.1 * sin(this.time * 1.1)) * (1 + this.grand * 0.2);
+      const introQ = this.assemblyStarted && this.assemblyProgress < 1
+        ? smoothstep(0, 0.74, this.assemblyProgress)
+        : 1;
+      const seed = 0.2 + 0.8 * introQ;
+      const r = starSize * seed * (0.9 + 0.1 * sin(this.time * 1.1)) * (1 + this.grand * 0.2);
       const pulse = 0.55 + 0.45 * sin(this.time * 1.7);
       const angle = this.time * 0.12;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.55 + pulse * 0.25;
+      ctx.globalAlpha = (0.55 + pulse * 0.25) * (0.34 + 0.66 * introQ);
       const halo = r * 14;
       ctx.drawImage(this.sprites.glow.starGold, centerX - halo / 2, starY - halo / 2, halo, halo);
 
       // Long rays.
-      ctx.globalAlpha = 0.22 + pulse * 0.1;
+      ctx.globalAlpha = (0.22 + pulse * 0.1) * (0.2 + 0.8 * introQ);
       for (let i = 0; i < 4; i++) {
         const a = angle + i * PI / 2;
         ctx.save();
@@ -2602,7 +2706,7 @@
       ctx.fill(path);
 
       // Four bright lens flares.
-      ctx.globalAlpha = 0.65;
+      ctx.globalAlpha = 0.65 * (0.24 + 0.76 * introQ);
       ctx.strokeStyle = 'rgba(255, 249, 225, 0.9)';
       ctx.lineWidth = 0.8;
       const long = r * 2.1;

@@ -54,16 +54,16 @@
       this.master.gain.value = 0.0001;
 
       const compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.value = -20;
-      compressor.knee.value = 24;
-      compressor.ratio.value = 3;
+      compressor.threshold.value = -10;
+      compressor.knee.value = 15;
+      compressor.ratio.value = 3.5;
       compressor.attack.value = 0.006;
       compressor.release.value = 0.45;
       this.master.connect(compressor);
       compressor.connect(ctx.destination);
 
       this.dryBus = ctx.createGain();
-      this.dryBus.gain.value = 0.86;
+      this.dryBus.gain.value = 0.95;
       this.dryBus.connect(this.master);
 
       this.reverbIn = ctx.createGain();
@@ -146,8 +146,8 @@
 
         const now = ctx.currentTime;
         this.master.gain.cancelScheduledValues(now);
-        this.master.gain.setValueAtTime(Math.max(0.0001, this.master.gain.value), now);
-        this.master.gain.exponentialRampToValueAtTime(0.72, now + 1.4);
+        this.master.gain.setValueAtTime(Math.max(0.9, this.master.gain.value), now);
+        this.master.gain.exponentialRampToValueAtTime(2.4, now + 1.2);
 
         this.enabled = true;
         this.chordStep = 0;
@@ -158,6 +158,8 @@
 
         clearInterval(this.timer);
         this.schedule();
+        // Instant, unmistakable feedback for the person who just turned sound on.
+        this.chime('warm');
         this.timer = window.setInterval(() => this.schedule(), 260);
         return true;
       } catch (error) {
@@ -200,9 +202,9 @@
           const noteIndex = MOTIF[this.bellStep % MOTIF.length];
           const octaveLift = Math.random() < 0.2 ? 2 : (Math.random() < 0.44 ? 1 : 0);
           const freq = PENTATONIC[(noteIndex + octaveLift) % PENTATONIC.length];
-          this.playBell(freq, this.nextBell, 0.034 + Math.random() * 0.012, (Math.random() - 0.5) * 0.9);
+          this.playBell(freq, this.nextBell, 0.08 + Math.random() * 0.02, (Math.random() - 0.5) * 0.9);
           if (Math.random() < 0.2) {
-            this.playBell(freq * 2, this.nextBell + 0.09, 0.009, (Math.random() - 0.5) * 0.5);
+            this.playBell(freq * 2, this.nextBell + 0.09, 0.02, (Math.random() - 0.5) * 0.5);
           }
         }
         this.bellStep += 1;
@@ -216,8 +218,8 @@
       const duration = BAR + 1.8;
       const out = ctx.createGain();
       out.gain.setValueAtTime(0.0001, time);
-      out.gain.exponentialRampToValueAtTime(0.058, time + 2.7);
-      out.gain.setValueAtTime(0.058, time + duration * 0.56);
+      out.gain.exponentialRampToValueAtTime(0.32, time + 1.55);
+      out.gain.setValueAtTime(0.32, time + duration * 0.56);
       out.gain.exponentialRampToValueAtTime(0.0001, time + duration);
 
       const filter = ctx.createBiquadFilter();
@@ -329,7 +331,7 @@
       };
       const notes = sets[mood] || sets.warm;
       notes.forEach((freq, i) => {
-        this.playBell(freq, now + i * 0.105, 0.05 - i * 0.008, (i - 1) * 0.4);
+        this.playBell(freq, now + i * 0.105, 0.12 - i * 0.016, (i - 1) * 0.4);
       });
     }
 

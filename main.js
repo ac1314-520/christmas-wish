@@ -161,7 +161,6 @@
     curtain: $('#curtain'),
     scene: $('#scene'),
     intro: $('#intro'),
-    introCanvas: $('#intro-scene'),
     introSound: $('#intro-sound'),
     introSkip: $('#intro-skip'),
     introStatus: $('#intro-status'),
@@ -204,7 +203,6 @@
 
   let scene = null;
   let audio = null;
-  let intro = null;
   let soundBusy = false;
   let snowOn = true;
   let introActive = false;
@@ -212,7 +210,7 @@
   let introTimers = [];
   let audioStarting = false;
   let audioAutoTried = false;
-  let audioGestureHandler = null;
+  let lastSoundToggleAt = 0;
   let collected = new Set();
   let wishes = [];
   let currentOrnament = -1;
@@ -916,6 +914,7 @@
 
   function setSoundState(on) {
     elements.soundToggle.classList.toggle('is-on', on);
+    if (on) elements.soundToggle.classList.remove('is-inviting');
     elements.soundToggle.setAttribute('aria-pressed', String(on));
     elements.soundToggle.setAttribute('aria-label', on ? '关闭声音' : '开启声音');
   }
@@ -931,28 +930,6 @@
     if (!introActive || introFinished) return;
     button.hidden = false;
     requestAnimationFrame(() => button.classList.add('is-visible'));
-  }
-
-  function disarmAudioGesture() {
-    if (!audioGestureHandler) return;
-    document.removeEventListener('pointerdown', audioGestureHandler, true);
-    document.removeEventListener('keydown', audioGestureHandler, true);
-    audioGestureHandler = null;
-  }
-
-  function armAudioGesture() {
-    if (audioGestureHandler || (audio && audio.enabled)) return;
-    const handler = (event) => {
-      const target = event.target;
-      if (target && typeof target.closest === 'function' && target.closest('#sound-toggle')) {
-        return;
-      }
-      disarmAudioGesture();
-      if (!audio || !audio.enabled) requestAudio({ auto: false });
-    };
-    audioGestureHandler = handler;
-    document.addEventListener('pointerdown', handler, true);
-    document.addEventListener('keydown', handler, true);
   }
 
   async function requestAudio({ auto = false, quiet = false } = {}) {
@@ -977,7 +954,6 @@
     setSoundState(ok);
     if (ok) {
       setIntroSoundVisible(false);
-      disarmAudioGesture();
       if (introActive && !introFinished && elements.introStatus) {
         elements.introStatus.textContent = '音乐已开启 · 正在把星光挂上树梢';
       }
@@ -986,6 +962,7 @@
       }
     } else if (auto) {
       if (introActive && !introFinished) setIntroSoundVisible(true);
+      elements.soundToggle.classList.add('is-inviting');
     } else if (!introActive && !quiet) {
       showToast('声音暂时没有醒来，再试一次吧。');
     }
@@ -1000,17 +977,24 @@
   }
 
   async function toggleSound() {
-    if (soundBusy) return;
+    const now = performance.now();
+    if (soundBusy || now - lastSoundToggleAt < 420) return;
+    lastSoundToggleAt = now;
     if (!audio || !audio.supported) {
       showToast('这片星空暂时听不见风铃。');
       return;
     }
     markInteraction();
+    if (audioStarting) {
+      showToast('正在唤醒今夜的旋律，请稍等。', 2000);
+      return;
+    }
     soundBusy = true;
     if (audio.enabled) {
       audio.disable();
       setSoundState(false);
       soundBusy = false;
+      showToast('声音已关闭。', 2400);
       return;
     }
     const ok = await audio.enable();
@@ -1019,7 +1003,6 @@
     if (!ok) {
       showToast('声音暂时没有醒来，再试一次吧。');
     } else {
-      disarmAudioGesture();
       setIntroSoundVisible(false);
       showToast('风铃和一首小夜曲，已为你开启。', 4200);
     }
@@ -1088,7 +1071,10 @@
     setupDialogs();
     setupProgress();
 
-    elements.soundToggle.addEventListener('click', toggleSound);
+    elements.soundToggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggleSound();
+    });
     elements.snowToggle.addEventListener('click', toggleSnow);
     elements.postcardOpen.addEventListener('click', openPostcard);
 
@@ -1177,7 +1163,7 @@
     hidePageFromAssistiveTech(false);
     if (elements.topbar) elements.topbar.removeAttribute('inert');
     if (elements.treeUI) elements.treeUI.removeAttribute('inert');
-    document.documentElement.classList.add('is-ready');
+    document.documentElement.classList.add('scene-live', 'is-ready');
     if (elements.curtain) elements.curtain.classList.add('is-hidden');
     if (scene) scene.setRenderEnabled(true);
     showPromptSoon();
@@ -1190,14 +1176,22 @@
   }
 
   function startIntroSequence() {
-    if (!intro || reduceMotion) {
+    // The opening is the real tree: the main scene starts as a drift of
+    // embers, then the actual needles, lights, ornaments and star assemble.
+    if (scene) {
+      scene.startAssembly();
+      scene.setRenderEnabled(true);
+    }
+    document.documentElement.classList.add('scene-live');
+
+    if (reduceMotion) {
+      if (scene) scene.finishAssembly();
       if (elements.intro) {
         elements.intro.hidden = true;
         elements.intro.inert = true;
       }
       revealPage();
       attemptAutoSound();
-      if (!audio || !audio.enabled) armAudioGesture();
       return;
     }
 
@@ -1205,27 +1199,19 @@
     introFinished = false;
     hidePageFromAssistiveTech(true);
     if (elements.curtain) elements.curtain.classList.add('is-hidden');
-    if (scene) scene.setRenderEnabled(false);
     elements.intro.hidden = false;
     elements.intro.inert = false;
     elements.intro.classList.add('is-playing');
     setIntroFlashPoint();
-    try {
-      intro.start();
-    } catch (error) {
-      console.warn('[Noël] Opening film stopped early:', error);
-      finishIntro(true);
-      return;
-    }
     attemptAutoSound();
 
     introTimers.push(window.setTimeout(() => {
       if (introFinished) return;
       elements.intro.classList.add('is-flashing');
       if (audio && audio.enabled) audio.chime('warm');
-    }, reduceMotion ? 80 : 2600));
+    }, 2650));
 
-    introTimers.push(window.setTimeout(() => finishIntro(false), reduceMotion ? 250 : 3000));
+    introTimers.push(window.setTimeout(() => finishIntro(false), 3250));
   }
 
   function finishIntro(skipped = false) {
@@ -1234,6 +1220,7 @@
     introTimers.forEach((timer) => clearTimeout(timer));
     introTimers = [];
 
+    if (scene) scene.finishAssembly();
     if (elements.intro) {
       elements.intro.classList.remove('is-playing');
       if (skipped) elements.intro.classList.add('is-skipped');
@@ -1246,15 +1233,17 @@
     }
     setIntroSoundVisible(false);
     revealPage();
-    if (!audio || !audio.enabled) armAudioGesture();
 
     const hideDelay = skipped || reduceMotion ? 500 : 1180;
     window.setTimeout(() => {
       if (!elements.intro) return;
       elements.intro.hidden = true;
       elements.intro.classList.remove('is-leaving', 'is-skipped', 'is-flashing');
-      if (intro) intro.stop();
       introActive = false;
+      if (!audio || !audio.enabled) {
+        elements.soundToggle.classList.add('is-inviting');
+        showToast('轻触右上角的声音按钮，今夜的旋律就会响起。', 4400);
+      }
     }, hideDelay);
   }
 
@@ -1279,29 +1268,16 @@
 
     setupUI();
     createScene();
+    if (scene) scene.setRenderEnabled(false);
     updateProgress();
     if (wishes.length) renderWishHistory();
-
-    if (window.ChristmasIntro) {
-      try {
-        intro = new window.ChristmasIntro(elements.introCanvas, {
-          getLayout: () => (scene ? scene.layout : null),
-          ornaments: ORNAMENTS
-        });
-      } catch (error) {
-        console.warn('[Noël] Opening film could not start:', error);
-        intro = null;
-      }
-    }
     hidePageFromAssistiveTech(true);
 
     // The Chinese editorial block changes height once its serif arrives. Give
-    // the scene a second measuring pass so the tree never crowds the copy, and
-    // let the opening film re-align its particles to the final tree.
+    // the scene a second measuring pass so the tree never crowds the copy.
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => {
         if (scene) scene.resize(false);
-        if (intro) intro.resize();
       }).catch(() => {});
     }
 
@@ -1309,9 +1285,8 @@
     // from the browser console to spawn a meteor, recolor the evening, or
     // inspect the scene. Everything visible on the page remains plain DOM.
     window.NOEL = {
-      version: '1.1.0',
+      version: '1.2.0',
       scene,
-      intro,
       audio,
       ornaments: ORNAMENTS,
       openWish,
