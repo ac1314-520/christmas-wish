@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#030b12">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="星愿圣诞夜 —— 一棵会发光的圣诞树，一场藏在雪夜里的浪漫惊喜。轻触彩球收集星愿，点亮树顶星星许下心愿。">
+  <meta property="og:title" content="星愿圣诞夜 · A Night of Wishes">
+  <meta property="og:description" content="愿每一颗心，都有星光抵达。">
+  <meta property="og:type" content="website">
+  <title>星愿圣诞夜 · A Night of Wishes</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050f17'/%3E%3Cpath d='M32 9l4.8 17.9L54 32l-17.2 5.1L32 55l-4.8-17.9L10 32l17.2-5.1z' fill='%23f1d596'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Reusable, hand-drawn line icons -->
+  <svg class="svg-defs" aria-hidden="true" focusable="false">
+    <symbol id="icon-star4" viewBox="0 0 32 32">
+      <path d="M16 1.8c.7 8.7 5.5 13.5 14.2 14.2C21.5 16.7 16.7 21.5 16 30.2 15.3 21.5 10.5 16.7 1.8 16 10.5 15.3 15.3 10.5 16 1.8Z" fill="currentColor"/>
+    </symbol>
+    <symbol id="icon-star" viewBox="0 0 32 32">
+      <path d="m16 3.6 3.6 8.3 9 .9-6.8 6 2 8.9-7.8-4.6-7.8 4.6 2-8.9-6.8-6 9-.9L16 3.6Z"/>
+    </symbol>
+    <symbol id="icon-sparkle" viewBox="0 0 32 32">
+      <path d="M16 3v10M16 19v10M3 16h10M19 16h10M9 9l4 4M19 19l4 4M23 9l-4 4M13 19l-4 4"/>
+    </symbol>
+    <symbol id="icon-sound" viewBox="0 0 32 32">
+      <path d="M5 12.5h5L17 7v18l-7-5.5H5v-7Z"/>
+      <path d="M21.5 11.2a7 7 0 0 1 0 9.6M24.8 7.8a11.8 11.8 0 0 1 0 16.4" class="icon-fade"/>
+    </symbol>
+    <symbol id="icon-snow" viewBox="0 0 32 32">
+      <path d="M16 3v26M5.5 9.5l21 13M5.5 22.5l21-13M12.3 4.8l3.7 4 3.7-4M12.3 27.2l3.7-4 3.7 4M3.9 14.3l5.3 1.7-1.7 5.3M28.1 17.7l-5.3-1.7 1.7-5.3"/>
+    </symbol>
+    <symbol id="icon-postcard" viewBox="0 0 32 32">
+      <rect x="3.5" y="7.5" width="25" height="17" rx="2"/>
+      <path d="M9 21l5.6-6 4.1 4 2.7-3 3.6 5M20.5 11h4.5M20.5 14h3"/>
+    </symbol>
+    <symbol id="icon-close" viewBox="0 0 32 32">
+      <path d="m8.5 8.5 15 15M23.5 8.5l-15 15"/>
+    </symbol>
+    <symbol id="icon-rotate" viewBox="0 0 32 32">
+      <path d="M26 13.5A10.5 10.5 0 1 0 26.5 21"/>
+      <path d="m27 6.5-.8 7.5-7.3-1.5"/>
+      <circle cx="16" cy="16" r="2.6"/>
+    </symbol>
+    <symbol id="icon-arrow" viewBox="0 0 32 32">
+      <path d="M6 16h19M18 8.5 26 16l-8 7.5"/>
+    </symbol>
+    <symbol id="icon-download" viewBox="0 0 32 32">
+      <path d="M16 4v16M9.5 13.5 16 20l6.5-6.5M5 24v3h22v-3"/>
+    </symbol>
+    <symbol id="icon-snowflake" viewBox="0 0 32 32">
+      <path d="M16 3v26M5.5 9.5l21 13M5.5 22.5l21-13M12.5 5l3.5 4 3.5-4M12.5 27l3.5-4 3.5 4M4.5 14l5.2 2-2 5.2M27.5 18l-5.2-2 2-5.2"/>
+    </symbol>
+    <symbol id="icon-bell" viewBox="0 0 32 32">
+      <path d="M7 23h18l-2.3-3.2V14a6.7 6.7 0 0 0-13.4 0v5.8L7 23Z"/>
+      <path d="M13 26.5a3.2 3.2 0 0 0 6 0M16 4V2"/>
+    </symbol>
+    <symbol id="icon-candle" viewBox="0 0 32 32">
+      <path d="M10.5 13.5h11V27h-11zM16 13.5V9"/>
+      <path d="M16 8.8c-3.7-2.6-1.4-6.4 0-7.3 1.4.9 3.7 4.7 0 7.3Z"/>
+      <path d="M7 27h18"/>
+    </symbol>
+    <symbol id="icon-moon" viewBox="0 0 32 32">
+      <path d="M22.8 24.5A11 11 0 0 1 10 6.7a11 11 0 1 0 14.5 17.5 11.5 11.5 0 0 1-1.7.3Z"/>
+      <path d="M24 6.5v4M22 8.5h4M7 15v3M5.5 16.5h3" class="icon-fade"/>
+    </symbol>
+    <symbol id="icon-aurora" viewBox="0 0 32 32">
+      <path d="M3 23c4.3-12.5 8.5-14.8 13.3-7.7C21.3 22.5 25 19.5 29 7"/>
+      <path d="M3 27c5-8.8 8.7-10.2 13.4-4.1 4.1 5.3 8.7 3.3 12.6-4.4" class="icon-fade"/>
+    </symbol>
+    <symbol id="icon-reindeer" viewBox="0 0 32 32">
+      <path d="M12 13.5c-2.3 2-3 5.2-2.1 9.5M17 14c1.7 2.2 2 5 1.4 8.5M10 23h3.5M17 23h3.5"/>
+      <path d="M12.5 13.3c.2-3.8 2.2-6.1 6.1-7.9 2.6-1.2 4.8-.9 6.5.7 1.8 1.7 2 4.2.7 7.1l-2.3 5.2-6.8.1-2.2-2.7-2-.8"/>
+      <path d="M22.9 7.6c-.3-2.2.8-4.5 2.7-5.4M24.5 8.9c1.8-1.1 3.7-1.2 5.2-.3M23.5 10.5l2.7-.3M19.6 13.2l-.8 4.2"/>
+      <circle cx="18.2" cy="9.6" r=".8" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="icon-galaxy" viewBox="0 0 32 32">
+      <path d="M16 16c3 .3 5.7 2 6.1 5 .4 3.4-2.2 6.2-5.6 6.3-5.1.1-8.7-3.9-8.5-8.6.2-6.4 5.3-11.2 11.8-11.2 4.3 0 8 2 10 5.2"/>
+      <circle cx="16" cy="16" r="1.8" fill="currentColor" stroke="none"/>
+      <path d="M25.5 5v4M23.5 7h4M6 8v3M4.5 9.5h3" class="icon-fade"/>
+    </symbol>
+    <symbol id="icon-meteor" viewBox="0 0 32 32">
+      <path d="m19 13 8.5-8.5M15 16l7-7M26 13.5A10 10 0 1 1 18 4"/>
+      <path d="M6 26l4-4M11 27l3-3M4 19l3-3" class="icon-fade"/>
+    </symbol>
+  </svg>
+
+  <div class="curtain" id="curtain" aria-hidden="true">
+    <div class="curtain__content">
+      <svg class="curtain__star"><use href="#icon-star4"></use></svg>
+      <p>正在收集星光</p>
+      <span class="curtain__track"><i></i></span>
+    </div>
+  </div>
+
+  <canvas id="scene" aria-hidden="true"></canvas>
+  <div class="scene-fx scene-fx--vignette" aria-hidden="true"></div>
+  <div class="scene-fx scene-fx--grain" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand" aria-label="Noël 星愿之夜">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32"><use href="#icon-star4"></use></svg>
+      </span>
+      <span class="brand__words">
+        <span class="brand__name">NOËL</span>
+        <span class="brand__sub">星愿之夜</span>
+      </span>
+    </div>
+
+    <nav class="controls" aria-label="场景控制">
+      <button class="control control--sound" id="sound-toggle" type="button" aria-pressed="false" aria-label="开启声音">
+        <span class="control__icon" aria-hidden="true"><svg viewBox="0 0 32 32"><use href="#icon-sound"></use></svg></span>
+        <span class="control__label">声音</span>
+        <span class="control__signal" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <button class="control is-on" id="snow-toggle" type="button" aria-pressed="true" aria-label="关闭飘雪">
+        <span class="control__icon" aria-hidden="true"><svg viewBox="0 0 32 32"><use href="#icon-snow"></use></svg></span>
+        <span class="control__label">飘雪</span>
+      </button>
+      <button class="control" id="postcard-open" type="button" aria-label="制作一张明信片">
+        <span class="control__icon" aria-hidden="true"><svg viewBox="0 0 32 32"><use href="#icon-postcard"></use></svg></span>
+        <span class="control__label">明信片</span>
+      </button>
+    </nav>
+  </header>
+
+  <main class="hero">
+    <section class="prose" aria-labelledby="hero-title">
+      <p class="kicker"><span class="kicker__line" aria-hidden="true"></span>A Little Christmas Wish</p>
+      <h1 class="title" id="hero-title">
+        <span class="title__merry">Merry</span>
+        <span class="title__christmas">Christmas</span>
+      </h1>
+      <p class="wishline">愿每一颗心，都有星光抵达。</p>
+      <p class="poem">今夜，雪落得很轻。<br>把想念折进风里，<br>让星光替你抵达。</p>
+
+      <div class="collection" aria-label="今夜星愿收集进度">
+        <div class="collection__head">
+          <span>今夜星愿</span>
+          <span><b id="collected-count">0</b><i> / 8</i></span>
+        </div>
+        <div class="collection__dots" id="progress-dots" aria-hidden="true"></div>
+        <p class="collection__hint">轻触树上的彩球，收集八份小小惊喜</p>
+      </div>
+    </section>
+
+    <div class="tree-ui" id="tree-ui">
+      <button class="topper-hit" id="topper" type="button" aria-label="点亮树顶星星，许一个愿望">
+        <span class="topper-hit__ring" aria-hidden="true"></span>
+        <span class="topper-hit__label">许一个愿</span>
+      </button>
+      <div class="ornament-layer" id="ornament-layer"></div>
+      <div class="topper-prompt" id="topper-prompt" aria-hidden="true">
+        <span class="topper-prompt__star">✦</span>
+        点星星 · 许一个愿
+      </div>
+    </div>
+
+    <p class="interaction-hint">
+      <span class="interaction-hint__icon" aria-hidden="true"><svg viewBox="0 0 32 32"><use href="#icon-rotate"></use></svg></span>
+      <span>拖动旋转 · 轻触彩球 · 点亮星星</span>
+    </p>
+  </main>
+
+  <footer class="site-footer">
+    <p>FROM THE NORTH POLE, WITH LOVE</p>
+    <p class="site-footer__center" aria-hidden="true"><span></span><svg viewBox="0 0 32 32"><use href="#icon-star4"></use></svg><span></span></p>
+    <p>25 · 12 · A NIGHT OF WISHES</p>
+  </footer>
+
+  <dialog class="modal" id="surprise-dialog" aria-labelledby="surprise-title">
+    <div class="modal__panel">
+      <button class="modal__close" type="button" data-close aria-label="关闭">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#icon-close"></use></svg>
+      </button>
+      <div class="surprise__emblem" id="surprise-emblem" aria-hidden="true">
+        <span class="surprise__emblem-glow"></span>
+        <span class="surprise__emblem-ring"></span>
+        <span class="surprise__icon" id="surprise-icon"></span>
+      </div>
+      <p class="overline" id="surprise-kicker">NO. 01 · FIRST SNOW</p>
+      <h2 class="modal__title" id="surprise-title">初雪落在你的肩上</h2>
+      <p class="modal__quote" id="surprise-quote"></p>
+      <div class="modal__seal" id="surprise-seal" aria-hidden="true">
+        <span></span><i>来自北极的祝福</i><span></span>
+      </div>
+      <button class="btn btn--primary" id="surprise-collect" type="button">收下这颗星星</button>
+      <p class="modal__footnote" id="surprise-footnote">第 1 / 8 颗星愿</p>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="wish-dialog" aria-labelledby="wish-title">
+    <form class="modal__panel wish-panel" id="wish-form">
+      <button class="modal__close" type="button" data-close aria-label="关闭">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#icon-close"></use></svg>
+      </button>
+      <div class="wish-panel__star" aria-hidden="true">
+        <svg viewBox="0 0 32 32"><use href="#icon-star4"></use></svg>
+      </div>
+      <p class="overline">MAKE A LITTLE WISH</p>
+      <h2 class="modal__title" id="wish-title">把愿望放上天空</h2>
+      <p class="modal__quote">树顶的星星听得见。写下一句愿望，它会乘着今晚的风，飘到很远的地方。</p>
+      <label class="sr-only" for="wish-input">你的圣诞愿望</label>
+      <div class="wish-input-wrap">
+        <textarea id="wish-input" maxlength="48" rows="3" placeholder="比如：希望我们在新的一年里，都能如愿以偿。"></textarea>
+        <span class="wish-input-count"><b id="wish-count">0</b> / 48</span>
+      </div>
+      <p class="wish-error" id="wish-error" hidden>写下一点点心愿，再交给星光吧。</p>
+      <p class="wish-privacy">愿望只会被保存在你的浏览器里，不会被发送到任何地方。</p>
+      <button class="btn btn--primary" type="submit">交给星光</button>
+      <div class="wish-past" id="wish-past" hidden>
+        <p class="wish-past__title">你曾交给星光的愿望</p>
+        <ul id="wish-past-list"></ul>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal modal--postcard" id="postcard-dialog" aria-labelledby="postcard-title">
+    <div class="modal__panel postcard-panel">
+      <button class="modal__close" type="button" data-close aria-label="关闭">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#icon-close"></use></svg>
+      </button>
+      <p class="overline">A LITTLE KEEPSAKE</p>
+      <h2 class="modal__title" id="postcard-title">把今夜留在明信片里</h2>
+      <div class="postcard-stage" id="postcard-stage">
+        <div class="postcard-loading" id="postcard-loading">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#icon-star4"></use></svg>
+          <span>正在收集月光…</span>
+        </div>
+        <img id="postcard-image" alt="星愿圣诞夜明信片预览" hidden>
+      </div>
+      <div class="postcard-actions">
+        <a class="btn btn--primary" id="postcard-download" href="#" download="noel-postcard.jpg">
+          <svg class="btn__icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#icon-download"></use></svg>
+          保存明信片
+        </a>
+        <button class="btn btn--quiet" type="button" data-close>再听一会儿雪</button>
+      </div>
+      <p class="modal__footnote">送给未来的自己，或此刻想起的人。</p>
+    </div>
+  </dialog>
+
+  <dialog class="modal modal--finale" id="finale-dialog" aria-labelledby="finale-title">
+    <div class="modal__panel finale-panel">
+      <button class="modal__close" type="button" data-close aria-label="关闭">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#icon-close"></use></svg>
+      </button>
+      <div class="finale-orbit" aria-hidden="true">
+        <span></span><span></span><span></span>
+        <svg viewBox="0 0 32 32"><use href="#icon-star4"></use></svg>
+      </div>
+      <p class="overline">EIGHT LITTLE WISHES</p>
+      <h2 class="finale-title" id="finale-title">整棵树，<br>都为你亮了。</h2>
+      <p class="modal__quote">你收集了八份来自北极的祝福。现在，把其中一份留给自己，把剩下的，分给你想念的人。</p>
+      <p class="finale-signature">MERRY CHRISTMAS, WITH ALL MY LOVE.</p>
+      <button class="btn btn--primary" id="finale-wish" type="button">把愿望放上天空</button>
+      <button class="text-btn" type="button" data-close>收下今夜</button>
+    </div>
+  </dialog>
+
+  <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
+
+  <noscript>
+    <div class="noscript">请开启 JavaScript，才能看见今夜的星光与圣诞树。</div>
+  </noscript>
+
+  <script src="audio.js"></script>
+  <script src="scene.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
