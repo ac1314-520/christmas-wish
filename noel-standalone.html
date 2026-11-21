@@ -2958,6 +2958,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       this.convolver = null;
       this.noiseBuffer = null;
       this.startedAt = 0;
+      this.forceFreshOnNextEnable = false;
     }
 
     get supported() {
@@ -2965,6 +2966,23 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     }
 
     /** Lazily build the graph — required to happen inside a user gesture. */
+    disposeContext() {
+      clearInterval(this.timer);
+      clearTimeout(this.suspendTimer);
+      this.timer = null;
+      this.suspendTimer = null;
+      this.enabled = false;
+      if (this.ctx) {
+        try { this.ctx.close().catch(() => {}); } catch (_) {}
+      }
+      this.ctx = null;
+      this.master = null;
+      this.dryBus = null;
+      this.reverbIn = null;
+      this.convolver = null;
+      this.noiseBuffer = null;
+    }
+
     build() {
       if (!AC) throw new Error('Web Audio is not supported');
       if (this.ctx) return;
@@ -3046,23 +3064,62 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             })
           ]);
           if (resumeTimer) clearTimeout(resumeTimer);
-          if (!resumed || this.ctx.state !== 'running') return false;
+          if (!resumed || this.ctx.state !== 'running') {
+            this.forceFreshOnNextEnable = true;
+            return false;
+          }
         }
         return await this.enable();
       } catch (_) {
+        this.forceFreshOnNextEnable = true;
         return false;
       }
     }
 
-    async enable() {
+    /**
+     * Called from a real click/tap. If autoplay was blocked earlier, the first
+     * AudioContext can remain permanently suspended in some browsers (notably
+     * iOS). In that case, discard it and build a brand-new one inside the
+     * gesture instead of fighting the old context.
+     */
+    async enable({ fresh = false } = {}) {
       try {
+        if (fresh || this.forceFreshOnNextEnable) {
+          this.disposeContext();
+          this.forceFreshOnNextEnable = false;
+        }
         if (!this.ctx) this.build();
-        const ctx = this.ctx;
-        if (ctx.state === 'suspended') await ctx.resume();
+
+        let ctx = this.ctx;
+        let resumeAttempt = null;
+        if (ctx.state !== 'running') {
+          try { resumeAttempt = ctx.resume(); } catch (_) {}
+        }
+        if (resumeAttempt) {
+          try { await resumeAttempt; } catch (_) {}
+        }
+
+        // A context that was born before a gesture can still refuse to wake up.
+        // Rebuild once, immediately, while the same tap is still active.
+        if (ctx.state !== 'running') {
+          this.disposeContext();
+          this.build();
+          ctx = this.ctx;
+          resumeAttempt = null;
+          if (ctx.state !== 'running') {
+            try { resumeAttempt = ctx.resume(); } catch (_) {}
+          }
+          if (resumeAttempt) {
+            try { await resumeAttempt; } catch (_) {}
+          }
+        }
+
         if (ctx.state !== 'running') {
           this.enabled = false;
+          this.forceFreshOnNextEnable = true;
           return false;
         }
+
         clearTimeout(this.suspendTimer);
         this.suspendTimer = null;
 
@@ -3081,12 +3138,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         clearInterval(this.timer);
         this.schedule();
         // Instant, unmistakable feedback for the person who just turned sound on.
-        this.chime('warm');
+        try { this.chime('warm'); } catch (error) {
+          console.warn('[Noël] Opening chime was skipped:', error);
+        }
         this.timer = window.setInterval(() => this.schedule(), 260);
         return true;
       } catch (error) {
         console.warn('[Noël] Audio could not start:', error);
         this.enabled = false;
+        this.forceFreshOnNextEnable = true;
         return false;
       }
     }
@@ -7426,7 +7486,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       if (introActive && !introFinished) setIntroSoundVisible(true);
       elements.soundToggle.classList.add('is-inviting');
     } else if (!introActive && !quiet) {
-      showToast('声音暂时没有醒来，再试一次吧。');
+      showToast('浏览器暂时没有放行声音，请再点一次声音按钮。', 4400);
     }
     return ok;
   }
@@ -7463,7 +7523,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     setSoundState(ok);
     soundBusy = false;
     if (!ok) {
-      showToast('声音暂时没有醒来，再试一次吧。');
+      showToast('浏览器暂时没有放行声音。请再点一次；若仍无声，可刷新页面或换用 Chrome / Edge。', 5400);
     } else {
       setIntroSoundVisible(false);
       showToast('风铃和一首小夜曲，已为你开启。', 4200);

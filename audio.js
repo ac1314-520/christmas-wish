@@ -36,6 +36,7 @@
       this.convolver = null;
       this.noiseBuffer = null;
       this.startedAt = 0;
+      this.forceFreshOnNextEnable = false;
     }
 
     get supported() {
@@ -43,6 +44,23 @@
     }
 
     /** Lazily build the graph — required to happen inside a user gesture. */
+    disposeContext() {
+      clearInterval(this.timer);
+      clearTimeout(this.suspendTimer);
+      this.timer = null;
+      this.suspendTimer = null;
+      this.enabled = false;
+      if (this.ctx) {
+        try { this.ctx.close().catch(() => {}); } catch (_) {}
+      }
+      this.ctx = null;
+      this.master = null;
+      this.dryBus = null;
+      this.reverbIn = null;
+      this.convolver = null;
+      this.noiseBuffer = null;
+    }
+
     build() {
       if (!AC) throw new Error('Web Audio is not supported');
       if (this.ctx) return;
@@ -124,23 +142,62 @@
             })
           ]);
           if (resumeTimer) clearTimeout(resumeTimer);
-          if (!resumed || this.ctx.state !== 'running') return false;
+          if (!resumed || this.ctx.state !== 'running') {
+            this.forceFreshOnNextEnable = true;
+            return false;
+          }
         }
         return await this.enable();
       } catch (_) {
+        this.forceFreshOnNextEnable = true;
         return false;
       }
     }
 
-    async enable() {
+    /**
+     * Called from a real click/tap. If autoplay was blocked earlier, the first
+     * AudioContext can remain permanently suspended in some browsers (notably
+     * iOS). In that case, discard it and build a brand-new one inside the
+     * gesture instead of fighting the old context.
+     */
+    async enable({ fresh = false } = {}) {
       try {
+        if (fresh || this.forceFreshOnNextEnable) {
+          this.disposeContext();
+          this.forceFreshOnNextEnable = false;
+        }
         if (!this.ctx) this.build();
-        const ctx = this.ctx;
-        if (ctx.state === 'suspended') await ctx.resume();
+
+        let ctx = this.ctx;
+        let resumeAttempt = null;
+        if (ctx.state !== 'running') {
+          try { resumeAttempt = ctx.resume(); } catch (_) {}
+        }
+        if (resumeAttempt) {
+          try { await resumeAttempt; } catch (_) {}
+        }
+
+        // A context that was born before a gesture can still refuse to wake up.
+        // Rebuild once, immediately, while the same tap is still active.
+        if (ctx.state !== 'running') {
+          this.disposeContext();
+          this.build();
+          ctx = this.ctx;
+          resumeAttempt = null;
+          if (ctx.state !== 'running') {
+            try { resumeAttempt = ctx.resume(); } catch (_) {}
+          }
+          if (resumeAttempt) {
+            try { await resumeAttempt; } catch (_) {}
+          }
+        }
+
         if (ctx.state !== 'running') {
           this.enabled = false;
+          this.forceFreshOnNextEnable = true;
           return false;
         }
+
         clearTimeout(this.suspendTimer);
         this.suspendTimer = null;
 
@@ -159,12 +216,15 @@
         clearInterval(this.timer);
         this.schedule();
         // Instant, unmistakable feedback for the person who just turned sound on.
-        this.chime('warm');
+        try { this.chime('warm'); } catch (error) {
+          console.warn('[Noël] Opening chime was skipped:', error);
+        }
         this.timer = window.setInterval(() => this.schedule(), 260);
         return true;
       } catch (error) {
         console.warn('[Noël] Audio could not start:', error);
         this.enabled = false;
+        this.forceFreshOnNextEnable = true;
         return false;
       }
     }

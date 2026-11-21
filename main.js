@@ -964,7 +964,7 @@
       if (introActive && !introFinished) setIntroSoundVisible(true);
       elements.soundToggle.classList.add('is-inviting');
     } else if (!introActive && !quiet) {
-      showToast('声音暂时没有醒来，再试一次吧。');
+      showToast('浏览器暂时没有放行声音，请再点一次声音按钮。', 4400);
     }
     return ok;
   }
@@ -1001,7 +1001,7 @@
     setSoundState(ok);
     soundBusy = false;
     if (!ok) {
-      showToast('声音暂时没有醒来，再试一次吧。');
+      showToast('浏览器暂时没有放行声音。请再点一次；若仍无声，可刷新页面或换用 Chrome / Edge。', 5400);
     } else {
       setIntroSoundVisible(false);
       showToast('风铃和一首小夜曲，已为你开启。', 4200);
